@@ -300,8 +300,8 @@ class Scanner:
         while True:
             print(">>>>>>>>>>>>>>>>>>>>>>>>> INGRESE UN COMANDO <<<<<<<<<<<<<<<<<<<<<<<<<")
             print("->Si deseas salir escribe \"exit\"<-")
-            entrada = "execute -path=ejecucion-windows.adsj"
-            #entrada = "execute -path=ejecucion-linux.adsj"
+            #entrada = "execute -path=ejecucion-windows.adsj"
+            entrada = "execute -path=ejecucion-linux.adsj"
             #entrada = input("-> ")
             if entrada.lower() == "exit":
                 break
