@@ -1,8 +1,8 @@
-import os
 import struct
 import mount as Mount
 import Structs
 import main as main
+from SystemExt2 import *
 
 class Sesion:
     def __init__(self):
@@ -14,11 +14,8 @@ class Sesion:
         self.direccion = ""
         self.fit = ""
 
-
-
 actualSesion = Sesion()
 logueado = Structs.UsuarioActivo()
-
 
 class Usuarios:
     def __init__(self, m = Mount.Mount()):  
@@ -130,7 +127,7 @@ class Usuarios:
     def logout(self):
         global logueado
         print("Cerrando sesión...")
-        print("¡ADIÓS " + logueado.user + ", espero volver a verte!") 
+        print(f"Hasta la proxima {logueado.user}") 
         logueado = Structs.UsuarioActivo()
         actualSesion = Sesion()
         return False
@@ -141,64 +138,71 @@ class Usuarios:
         for current in context:
             id_ = current[:current.find('=')]
             current = current[current.find('=') + 1:]
-            if current[:1] == "\"":
+            if current.startswith("\"") and current.endswith("\""):
                 current = current[1:-1]
             elif main.Scanner.comparar(id_, "name"):
                 name = current
 
-        if name == "":
-            print(action + "GRP", "No se encontró el parámetro \"-name\"")
-            return
-        elif main.Scanner.comparar(action, "MK"):
-            self.mkgrp(name)
-        else:
-            self.rmgrp(name)
+        try:
 
-    def mkgrp(self, n):
-        tamanioBloquesCarpetas = len(bytes(Structs.BloquesCarpetas()))
+            if name == "":
+                print(action + "GRP", "No se encontró el parámetro \"name\"")
+                return
+            elif main.Scanner.comparar(action, "MK"):
+                self.mkgrp(name)
+            else:
+                self.rmgrp(name)
+        
+        except Exception as e:
+            main.Scanner.error(action + "GRP", "Error al ejecutar el comando")
+            print(e)
+
+    def mkgrp(self, name):
         try:
             global logueado
-            if not main.Scanner.comparar(logueado.user, "root"):
+            if not logueado.user == "root":
                 raise RuntimeError("Solo el usuario ROOT puede acceder a estos comandos")
 
             path = ""
             path, partition = self.mount.getmount(logueado.id)
             sprTemp = Structs.SuperBloque()  # Crear una instancia de SuperBloque
-            sprTemp = self.desempaquetarSuperBloque(path, partition)
+            sprTemp = desempaquetarSuperBloque(path, partition)
 
-            fb = Structs.BloquesArchivos()
-            bytes_bloque_archivo = bytes(fb)
-            usuariosTXT = bytearray(len(bytes_bloque_archivo))
-            with open(path, "rb") as rfile: 
-                rfile.seek(sprTemp.s_block_start + tamanioBloquesCarpetas)
-                rfile.readinto(usuariosTXT) 
 
-            fb.b_content = struct.unpack("<64s", usuariosTXT[:64])[0]
+            #Obtener el contenido del archivo de usuarios.txt
 
-            txt = usuariosTXT.decode('ascii') 
-            vctr = self.get_elements(txt, '\n')
-            c = 0
-            txttmp = ""
-            for line in vctr:
-                if line[2] == 'G' or line[2] == 'g':
-                    c += 1
-                    in_ = line.split(',')
-                    if in_[2] == n:
-                        if line[0] == '0':
-                            pass
-                        else:
-                            raise RuntimeError("el grupo ya existe")
-                    else:
-                        txttmp += line + "\n"
-                else:
-                    txttmp += line + "\n"
-            txttmp += f"{c + 1},G,{n}\n"
-            fb.b_content = txttmp
+            inodo = Structs.Inodos()
+            inodo = getInodo(path, sprTemp, 1) #El inodo 1 es el archivo de usuarios.txt
 
-            with open(path, "rb+") as rfile:
-                rfile.seek(sprTemp.s_block_start + tamanioBloquesCarpetas)
-                rfile.write(bytes(fb))
-                print("MKGRP", "grupo "+n+" creado correctamente")
+            usuariosTXT = ""
+            for i_block in inodo.i_block:
+                if i_block != -1:
+                    #Obtener el contenido del bloque de carpetas
+                    bloque = getBloqueArchivo(path, sprTemp, i_block)
+                    usuariosTXT += bloque.b_content.decode('ascii')
+
+            #Eliminar bytes vacios
+            usuariosTXT = usuariosTXT.replace('\x00', '')
+
+            registros = usuariosTXT.split('\n') #Separar por saltos de linea y elminar los vacios
+            registros = list(filter(lambda x: x != '', registros))
+
+            gruposRegistrados = []
+            for line in registros:
+                registro = line.split(',')
+                if len(registro) > 1:
+                    if registro[1].lower() == 'g': #Si es grupo
+                        gruposRegistrados.append(registro[2]) #Agregar el nombre del grupo a la lista
+
+            if name in gruposRegistrados:
+                raise RuntimeError(f"el grupo {name} ya existe")
+
+            #Si no existe el grupo, crearlo
+            nuevoGrupo = f"{str(len(gruposRegistrados)+1)},G,{name}" #Crear el nuevo registro
+            usuariosTXT += f"{nuevoGrupo}\n" #Agregar el nuevo registro al archivo de usuarios.txt
+
+            addContentToBloqueArchivo(path, partition, 1, usuariosTXT) #Agregar el contenido al bloque de carpetas
+
         except Exception as e:
             print("MKGRP", str(e))
 
@@ -212,7 +216,7 @@ class Usuarios:
             path = ""
             path, partition = self.mount.getmount(logueado.id)
             sprTemp = Structs.SuperBloque()  # Crear una instancia de SuperBloque
-            sprTemp = self.desempaquetarSuperBloque(path, partition)
+            sprTemp = desempaquetarSuperBloque(path, partition)
 
             fb = Structs.BloquesArchivos()
             bytes_bloque_archivo = bytes(fb)
@@ -277,57 +281,63 @@ class Usuarios:
                 self.rmusr(usr)
 
     def mkusr(self, usr, pwd, grp):
-        tamanioBloquesCarpetas = len(bytes(Structs.BloquesCarpetas()))
         try:
             global logueado
-            if not main.Scanner.comparar(logueado.user, "root"):
+            if not logueado.user == "root":
                 raise RuntimeError("Solo el usuario ROOT puede acceder a estos comandos")
 
             path = ""
             path, partition = self.mount.getmount(logueado.id)
-
             sprTemp = Structs.SuperBloque()  # Crear una instancia de SuperBloque
-            sprTemp = self.desempaquetarSuperBloque(path, partition)
+            sprTemp = desempaquetarSuperBloque(path, partition)
 
-            fb = Structs.BloquesArchivos()
-            bytes_bloque_archivo = bytes(fb)
-            usuariosTXT = bytearray(len(bytes_bloque_archivo))
+
+            #Obtener el contenido del archivo de usuarios.txt
+
+            inodo = Structs.Inodos()
+            inodo = getInodo(path, sprTemp, 1) #El inodo 1 es el archivo de usuarios.txt
+
+            usuariosTXT = ""
+            for i_block in inodo.i_block:
+                if i_block != -1:
+                    #Obtener el contenido del bloque de carpetas
+                    bloque = getBloqueArchivo(path, sprTemp, i_block)
+                    usuariosTXT += bloque.b_content.decode('ascii')
+
+            #Eliminar bytes vacios
+            usuariosTXT = usuariosTXT.replace('\x00', '')
+
+            registros = usuariosTXT.split('\n') #Separar por saltos de linea y elminar los vacios
+            registros = list(filter(lambda x: x != '', registros))
+
+            gruposRegistrados = []
+            for line in registros:
+                registro = line.split(',')
+                if len(registro) > 1:
+                    if registro[1].lower() == 'g': #Si es grupo
+                        gruposRegistrados.append(registro[2]) #Agregar el nombre del grupo a la lista
+
+            usuariosRegistrados = []
+            for line in registros:
+                registro = line.split(',')
+                if len(registro) > 1:
+                    if registro[1].lower() == 'u': #Si es grupo
+                        usuariosRegistrados.append(registro[2]) #Agregar el nombre del grupo a la lista
+
+            if usr in usuariosRegistrados:
+                raise RuntimeError(f"el usuario {usr} ya existe")
             
-            with open(path, "rb") as rfile: 
-                rfile.seek(sprTemp.s_block_start + tamanioBloquesCarpetas)
-                rfile.readinto(usuariosTXT) 
+            if not grp in gruposRegistrados:
+                raise RuntimeError(f"el grupo {grp} no existe")
 
-            fb.b_content = struct.unpack("<64s", usuariosTXT[:64])[0]
-            txt = usuariosTXT.decode('ascii') 
-            print("usuarios: \n",txt)
-            vctr = self.get_elements(txt, '\n')
-            c = 0
-            txttmp = ""
-            for line in vctr:
-                if (line[2] == 'U' or line[2] == 'u') and line[0] != '0':
-                    c += 1
-                    in_ = self.get_elements(line, ',')
-                    if in_[3] == usr:
-                        raise RuntimeError("el usuario ya existe")
-                    else:
-                        txttmp += line + "\n"
-                else:
-                    txttmp += line + "\n"
-            userNuevo = str(c + 1) + ",U," + grp + "," + usr + "," + pwd + "\n"
+            #Si no existe el grupo, crearlo
+            nuevoUser = f"{str(len(usuariosRegistrados)+1)},U,{usr},{pwd}" #Crear el nuevo registro
+            usuariosTXT += f"{nuevoUser}\n" #Agregar el nuevo registro al archivo de usuarios.txt
 
-            if len(userNuevo) + len(txttmp) > 64:
-                main.Scanner.error("MKUSR", "No hay espacio en el bloque de archivos para crear el usuario")
-                return
-            
-            txttmp += userNuevo
-            fb.b_content = txttmp
+            addContentToBloqueArchivo(path, partition, 1, usuariosTXT) #Agregar el contenido al bloque de carpetas
 
-            with open(path, "rb+") as rfile:
-                rfile.seek(sprTemp.s_block_start + tamanioBloquesCarpetas)
-                rfile.write(bytes(fb))
-                print("MKUSR", "Usuario "+usr+" creado correctamente") 
         except Exception as e:
-            print("MKUSR", str(e))
+            print("MKGRP", str(e))
 
     def rmusr(self, usr):
         tamanioBloquesCarpetas = len(bytes(Structs.BloquesCarpetas()))
@@ -339,7 +349,7 @@ class Usuarios:
             path = ""
             path, partition = self.mount.getmount(logueado.id)
             sprTemp = Structs.SuperBloque()  # Crear una instancia de SuperBloque
-            sprTemp = self.desempaquetarSuperBloque(path, partition)
+            sprTemp = desempaquetarSuperBloque(path, partition)
 
             fb = Structs.BloquesArchivos()
             bytes_bloque_archivo = bytes(fb)
@@ -373,49 +383,3 @@ class Usuarios:
         except Exception as e:
             print("MKUSR", str(e))
 
-    def desempaquetarSuperBloque(self, path, p):
-        try:
-            sprTemp = Structs.SuperBloque()  # Crear una instancia de SuperBloque
-            bytes_super_bloque = bytes(sprTemp)  # Obtener los bytes de la instancia
-
-            recuperado = bytearray(len(bytes_super_bloque))  # Crear un bytearray del mismo tamaño
-            with open(path, "rb") as archivo:
-                archivo.seek(p.part_start - 1)
-                archivo.readinto(recuperado)
-            
-            # Desempaquetar los datos del bytearray recuperado
-            sprTemp.s_filesystem_type = struct.unpack("<i", recuperado[:4])[0]
-            sprTemp.s_inodes_count = struct.unpack("<i", recuperado[4:8])[0]
-            sprTemp.s_blocks_count = struct.unpack("<i", recuperado[8:12])[0]
-            sprTemp.s_free_blocks_count = struct.unpack("<i", recuperado[12:16])[0]
-            sprTemp.s_free_inodes_count = struct.unpack("<i", recuperado[16:20])[0]
-            sprTemp.s_mtime = struct.unpack("<d", recuperado[20:28])[0]
-            sprTemp.s_umtime = struct.unpack("<d", recuperado[28:36])[0]
-            sprTemp.s_mnt_count = struct.unpack("<i", recuperado[36:40])[0]
-            sprTemp.s_magic = struct.unpack("<i", recuperado[40:44])[0]
-            sprTemp.s_inode_size = struct.unpack("<i", recuperado[44:48])[0]
-            sprTemp.s_block_size = struct.unpack("<i", recuperado[48:52])[0]
-            sprTemp.s_first_ino = struct.unpack("<i", recuperado[52:56])[0]
-            sprTemp.s_first_blo = struct.unpack("<i", recuperado[56:60])[0]
-            sprTemp.s_bm_inode_start = struct.unpack("<i", recuperado[60:64])[0]
-            sprTemp.s_bm_block_start = struct.unpack("<i", recuperado[64:68])[0]
-            sprTemp.s_inode_start = struct.unpack("<i", recuperado[68:72])[0]
-            sprTemp.s_block_start = struct.unpack("<i", recuperado[72:76])[0] 
-            return sprTemp
-        except Exception as e:
-            print(e) 
-        finally:
-            archivo.close()
-    
-    def actualizarSuperBloqueEnParticion(self, path, partition, newSB):
-        try:
-            with open(path, "rb+") as bfile:
-                bfile.seek(partition.part_start - 1)
-                bfile.write(bytes(newSB))
-                print("Superbloque actualizado en el disco")
-        
-        except Exception as e:
-            main.Scanner.error("MBR", "Error al actualizar particiones en el disco: %s" % path)
-            print(e)
-        finally:
-            bfile.close()

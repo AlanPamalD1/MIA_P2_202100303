@@ -1,7 +1,6 @@
 import os
 import main
 import Structs
-import mount as Mount
 from SystemExt2 import *
 
 class FILES:
@@ -101,6 +100,7 @@ class FILES:
     def crearArchivo(self, path, size, cont, creacion): #
         
         print(f"Creando archivo: {path} ...")
+
         idUsuario = self.logueado.id
         pathDisco, partition = self.mount.getmount(idUsuario)
 
@@ -124,17 +124,15 @@ class FILES:
                 with open(cont, "r") as file:
                     contenidoArchivo = file.read()
                     #Reemplazar los saltos de linea por \n
-                    #contenidoArchivo = contenidoArchivo.replace("\n", "\\n")
             except:
                 raise Exception(f"No se pudo leer el archivo {cont}")
             finally:
                 file.close()
         else: #<#> Si no se especifica un contenido, se creará un archivo con el tamaño especificado
-            
             #Agregar el texto 0123456789 hasta completar el tamaño
             for i in range(size):
                 contenidoArchivo += str(i % 10)
-
+        
         #<#> Verificar que size no exceda el tamaño maximo de un archivo
         if len(contenidoArchivo) > 64*15: #15 bloques de 64 bytes
             raise Exception(f"El contenido excede el tamaño maximo de caracteres en un archivo")
@@ -143,7 +141,9 @@ class FILES:
         if len(directorios) == 0: #si solo hay 1 directorio, es una carpeta en la raiz
             #path, superbloque, indice del inodo, tipo de inodo [0 = carpeta, 1 = archivo], nombre del inodo, -r
             self.ajustarCreacionInodo(pathDisco, partition, indexInodoPadre, 1, nombreArchivo)
+            FILES.addContentArchivo(pathDisco, partition, contenidoArchivo) #<+> Agregar contenido al archivo
             main.Scanner.mensaje("MKFILE", f"Se ha creado el archivo {nombreArchivo} con éxito")
+
             return
 
         else: #si hay directorios, es una carpeta en una ruta especifica
@@ -173,12 +173,57 @@ class FILES:
             if not self.ajustarCreacionInodo(pathDisco, partition, indexInodoPadre, 1, nombreArchivo):
                 main.Scanner.error("MKFILE", "No se pudo crear el archivo: " + nombreArchivo, " por falta de espacio")
                 return
-
-            print("Se agregará el contenido al nodo No. ", indexInodoPadre)
-            print(contenidoArchivo)
-
+            
+            FILES.addContentArchivo(pathDisco, partition, contenidoArchivo) #<+> Agregar contenido al archivo
             main.Scanner.mensaje("MKFILE", f"Se ha creado el archivo {nombreArchivo} en la ruta {concatenadorDirectorio} con éxito")
     
+
+    #<#> Verificar existencia apuntador a bloque desde el index del inodo padre, retorna el index del apuntador y si se encontró
+    @staticmethod
+    def verificarExistenciaRuta(pathDisco, partition, indexInodoPadre, directorio, type=0):
+        sprBloque = Structs.SuperBloque()  # Crear una instancia de SuperBloque
+        sprBloque = desempaquetarSuperBloque(pathDisco, partition)  # Obtener los bytes de la instancia
+
+        #Obtener el inido segun el indice
+        inodoTemp = Structs.Inodos()
+        inodoTemp = getInodo(pathDisco, sprBloque, indexInodoPadre) #inodo segun el indice, [0 = raiz]
+
+        apuntadorDirectorio = -1 #indice del inodo del directorio
+
+        if inodoTemp.i_type == 0: #si es una carpeta
+
+            for i_block in inodoTemp.i_block: #contador de los bloques del inodo
+                if i_block == -1: #si el bloque no tiene apuntador, continuar
+                    continue
+
+                #bloque con apuntador a un bloque de carpetas
+                bloque = Structs.BloquesCarpetas()
+                bloque = getBloqueCarpeta(pathDisco, sprBloque, i_block)
+
+                #i_content = 0 #contador del contenido del bloque
+                for content in bloque.b_content:
+                    if content.b_name == directorio: #Se encontro el directorio
+                        apuntadorDirectorio = content.b_inodo #indice del inodo del directorio
+
+                        #obtener el inodo del directorio
+                        inodoDirectorio = Structs.Inodos()
+                        inodoDirectorio = getInodo(pathDisco, sprBloque, apuntadorDirectorio)
+                        
+                        if inodoDirectorio.i_type == type: #si es del mismo tipo, continuar
+                            return apuntadorDirectorio, True
+                    #i_content += 1
+                
+        return apuntadorDirectorio, False
+
+    @staticmethod
+    def addContentArchivo(pathDisco, partition, contenido):
+        sprBloque = Structs.SuperBloque()  # Crear una instancia de SuperBloque
+        sprBloque = desempaquetarSuperBloque(pathDisco, partition)
+
+        indexUltimoInodo = sprBloque.s_first_ino-1 #indice del ultimo inodo creado
+        addContentToBloqueArchivo(pathDisco, partition, indexUltimoInodo, contenido)
+
+    #<#> Crear un archivo nuevo dado un bloque de carpetas con apuntador libre
     def crearCarpeta(self, path, creacion): #
         
         print(f"Creando carpeta: {path} ...")
@@ -239,43 +284,6 @@ class FILES:
             self.creacionNodoIndex(pathDisco, partition, indexInodoPadre, type, nombre)
         
         return True
-
-    #<#> Verificar existencia apuntador a bloque desde el index del inodo padre, retorna el index del apuntador y si se encontró
-    @staticmethod
-    def verificarExistenciaRuta(pathDisco, partition, indexInodoPadre, directorio, type=0):
-        sprBloque = Structs.SuperBloque()  # Crear una instancia de SuperBloque
-        sprBloque = desempaquetarSuperBloque(pathDisco, partition)  # Obtener los bytes de la instancia
-
-        #Obtener el inido segun el indice
-        inodoTemp = Structs.Inodos()
-        inodoTemp = getInodo(pathDisco, sprBloque, indexInodoPadre) #inodo segun el indice, [0 = raiz]
-
-        apuntadorDirectorio = -1 #indice del inodo del directorio
-
-        if inodoTemp.i_type == 0: #si es una carpeta
-
-            for i_block in inodoTemp.i_block: #contador de los bloques del inodo
-                if i_block == -1: #si el bloque no tiene apuntador, continuar
-                    continue
-
-                #bloque con apuntador a un bloque de carpetas
-                bloque = Structs.BloquesCarpetas()
-                bloque = getBloqueCarpeta(pathDisco, sprBloque, i_block)
-
-                #i_content = 0 #contador del contenido del bloque
-                for content in bloque.b_content:
-                    if content.b_name == directorio: #Se encontro el directorio
-                        apuntadorDirectorio = content.b_inodo #indice del inodo del directorio
-
-                        #obtener el inodo del directorio
-                        inodoDirectorio = Structs.Inodos()
-                        inodoDirectorio = getInodo(pathDisco, sprBloque, apuntadorDirectorio)
-                        
-                        if inodoDirectorio.i_type == type: #si es del mismo tipo, continuar
-                            return apuntadorDirectorio, True
-                    #i_content += 1
-                
-        return apuntadorDirectorio, False
 
     #<#> Analizar inodo donde se creara la carpeta o el archivo
     def creacionNodoIndex(self, pathDisco, partition, indexInodoPadre, typeInodo, nombreCreacion): 

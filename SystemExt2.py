@@ -117,7 +117,7 @@ def getBloqueArchivo(path, sprBloque, num):
             bfiles.readinto(content_data) #leer el inodo
             # Ahora, debes desempaquetar los datos en la instancia de BloquesCarpetas
             bloqueObtenido.b_content = struct.unpack("<64s", content_data[:64])[0] #64 bytes de datos
-        
+
         return bloqueObtenido
     except Exception as e:
         print(e)
@@ -129,7 +129,7 @@ def updateBloque(sprBloque, pathDisco, bloque, i_block):
     print("Actualizando bloque No. %d" % i_block)
     print(bloque)
     tamanioBloquesCarpetas = len(bytes(Structs.BloquesCarpetas()))
-    inicioBloque = sprBloque.s_block_start
+    inicioBloque = sprBloque.s_block_start 
 
     try: #escribir los datos del bloque de carpetas
         with open(pathDisco, "rb+") as bfiles:                 
@@ -139,6 +139,70 @@ def updateBloque(sprBloque, pathDisco, bloque, i_block):
         print(e)
     finally:
         bfiles.close()
+
+def addContentToBloqueArchivo(pathDisco, partition, indexInodo, contenido):
+    sprBloque = Structs.SuperBloque()  # Crear una instancia de SuperBloque
+    sprBloque = desempaquetarSuperBloque(pathDisco, partition)
+    
+    #remplazar saltos de linea por \n en contenido
+    #contenido = contenido.replace("\n", "\\n")
+
+    inodo = Structs.Inodos()
+    inodo = getInodo(pathDisco, sprBloque, indexInodo)
+    inodo.i_size += len(contenido)
+
+    #separar contenido en 64 caracteres
+    lista_contenido = []
+    i = 0
+    while i < len(contenido):
+        lista_contenido.append(contenido[i:i+64])
+        i += 64
+    
+    #Si la lista tiene mas de 15 elementos, solo se tomaran los primeros 15
+    if len(lista_contenido) > 15:
+        lista_contenido = lista_contenido[:15]
+
+    indiceContent = 0
+
+    for content in lista_contenido: #<#> Iterar con los contenidos
+        apuntador = inodo.i_block[indiceContent]
+        if apuntador != -1: #<#> Si el bloque tiene apuntador, se actualiza el bloque
+            bloque = Structs.BloquesArchivos()
+            bloque = getBloqueArchivo(pathDisco, sprBloque, apuntador)
+            bloque.b_content = content
+            updateBloque(sprBloque, pathDisco, bloque, apuntador)
+        else: #<#> Sin apuntador, se crea un bloque
+            #actualizar el inodo con el apuntador del bloque
+            inodo.i_block[indiceContent] = sprBloque.s_first_blo
+
+            bloque = Structs.BloquesArchivos()
+            bloque.b_content = content
+            addBloque(pathDisco, partition, bloque)
+
+        indiceContent += 1
+    
+    #actualizar el inodo
+    updateNodo(sprBloque, pathDisco, inodo, indexInodo)
+
+def getContentBloqueArchivo(pathDisco, partition, indexInodo):
+    sprBloque = Structs.SuperBloque()  # Crear una instancia de SuperBloque
+    sprBloque = desempaquetarSuperBloque(pathDisco, partition)
+    
+    contenido = ""
+
+    inodo = Structs.Inodos()
+    inodo = getInodo(pathDisco, sprBloque, indexInodo)
+
+    for i_block in inodo.i_block: #<#> Iterar con los contenidos
+        if i_block != -1: #<#> Si el bloque tiene apuntador, se actualiza el bloque
+            bloque = Structs.BloquesArchivos()
+            bloque = getBloqueArchivo(pathDisco, sprBloque, i_block)
+            contenido += bloque.b_content
+
+    #remplazar \n por saltos de linea
+    contenido = contenido.replace("\\n", "\n")
+    
+    return contenido
 
 #<*> INODOS
 

@@ -259,11 +259,3 @@ class BloquesArchivos:
 
     def __bytes__(self):
         return self.b_content.ljust(64, '\0').encode('utf-8')
-
-@add_objprint  
-class BloquesApuntadores:
-    def __init__(self):
-        self.b_pointers = [-1] * 16
-
-    def __bytes__(self):
-        return struct.pack("<16i", *self.b_pointers)

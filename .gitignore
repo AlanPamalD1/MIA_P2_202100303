@@ -161,8 +161,9 @@ cython_debug/
 
 #Discos creados
 *.dsk
+
+#Archivos de prueba
 *.png
-*.drawio
 *.script
 ejecuciones/
 *.dot
@@ -170,5 +171,9 @@ ejecuciones/
 *.jpeg
 *.pdf
 *.adsj
-prueba.txt
+pruebaCont.txt
+
+#Archivos drawio
+*.drawio
 *.bkp
+*.dtmp

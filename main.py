@@ -67,17 +67,16 @@ class Scanner:
                     terminar = True
         return tkn
 
-    def separar_tokens(self, text):
+    def separar_tokens_wip(self, text):
         tokens = []
         if not text:
             return tokens
         text += ' '
         token = ""
         estado = 0
-        canterior = ""
         for c in text:
             if estado == 0 and c == '-':
-                estado = 1 # Estado de lectura de token
+                estado = 1
             elif estado == 0 and c == '#':
                 continue
             elif estado != 0:
@@ -85,10 +84,7 @@ class Scanner:
                     if c == '=':
                         estado = 2
                     elif c == ' ':
-                        if canterior == 'r':
-                            tokens.append("r")
                         continue
-                    
                 elif estado == 2:
                     if c == '\"':
                         estado = 3
@@ -107,17 +103,49 @@ class Scanner:
                     tokens.append(token)
                     token = ""
                     continue
-                elif estado == 5:
-                    if token == "r":
-                        estado = 0
-                        tokens.append(token)
-                        token = ""
-                        continue
-                
                 token += c
+        return tokens
 
-            canterior = c
-
+    def separar_tokens(self, text):
+        tokens = []
+        if not text:
+            return tokens
+        text += ' '
+        token = ""
+        estado = 0
+        for c in text:
+            if estado == 0 and c == '-':
+                estado = 1
+            elif estado == 0 and c == '#':
+                continue
+            elif estado != 0:
+                if estado == 1:
+                    if c == '=':
+                        estado = 2
+                    elif c == ' ':
+                        tokens.append(token)  # Agregar el token actual antes de comenzar con "-r"
+                        token = ""
+                        estado = 0
+                elif estado == 2:
+                    if c == '\"':
+                        estado = 3
+                        continue
+                    else:
+                        estado = 4
+                elif estado == 3:
+                    if c == '\"':
+                        estado = 4
+                        continue
+                elif estado == 4 and c == '\"':
+                    tokens.clear()
+                    continue
+                elif estado == 4 and c == ' ':
+                    estado = 0
+                    tokens.append(token)
+                    token = ""
+                    continue
+                token += c
+        
         return tokens
 
     def funciones(self, token, tokens):
@@ -273,6 +301,7 @@ class Scanner:
             print(">>>>>>>>>>>>>>>>>>>>>>>>> INGRESE UN COMANDO <<<<<<<<<<<<<<<<<<<<<<<<<")
             print("->Si deseas salir escribe \"exit\"<-")
             entrada = "execute -path=ejecucion-windows.adsj"
+            #entrada = "execute -path=ejecucion-linux.adsj"
             #entrada = input("-> ")
             if entrada.lower() == "exit":
                 break
