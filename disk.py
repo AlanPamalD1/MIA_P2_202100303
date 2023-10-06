@@ -188,46 +188,6 @@ class Disk:
             bfile.close()
 
     @staticmethod
-    def getListaInodos(path, partition): #path, particion, tipo [0 = carpeta, 1 = archivo]
-
-        sprBloque = Structs.SuperBloque()
-        sprBloque = desempaquetarSuperBloque(path, partition)
-
-        if sprBloque == None:
-            return None
-
-        numeroInodos = sprBloque.s_inodes_count - sprBloque.s_free_inodes_count #numero de inodos que hay en el sistema
-        sizeInodos = len(bytes(Structs.Inodos())) #tamaño de los inodos
-
-        LInodos = []
-        try:
-            with open(path, "rb+") as bfile:
-                for i in range(numeroInodos):
-                    bfile.seek(sprBloque.s_inode_start + (sizeInodos * i)) #posicionarse en el inicio de cada inodo
-                    data = bfile.read(sizeInodos) #leer el inodo
-
-                    inodo = Structs.Inodos() #crear una instancia de inodo
-                    # Usamos el mismo orden en que empaquetamos los datos
-                    inodo.i_uid = struct.unpack("<i", data[:4])[0]
-                    inodo.i_gid = struct.unpack("<i", data[4:8])[0]
-                    inodo.i_size = struct.unpack("<i", data[8:12])[0]
-                    inodo.i_atime = struct.unpack("<d", data[12:20])[0]
-                    inodo.i_ctime = struct.unpack("<d", data[20:28])[0]
-                    inodo.i_mtime = struct.unpack("<d", data[28:36])[0]
-                    inodo.i_block = list(struct.unpack("<15i", data[36:96]))
-                    inodo.i_type = struct.unpack("<B", data[96:97])[0]
-                    inodo.i_perm = struct.unpack("<i", data[97:101])[0]
-
-                    LInodos.append(inodo) #agregar el inodo a la lista de inodos
-            
-            return LInodos
-        except Exception as e:
-            print(e)
-            return []
-        finally:
-            bfile.close()
-
-    @staticmethod
     def getLogicas(partition, path):
         ebrs = []
         try: 
@@ -690,7 +650,7 @@ class Disk:
                 main.Scanner.error("REP", "Falta el parametro %s en el comando" % r)
             return
 
-        if name not in ["mbr","disk", "bm_inode", "bm_block", "tree", "sb", "file", "ls"]:
+        if name not in ["mbr","disk", "bm_inode", "bm_block", "tree", "sb", "file"]:
             main.Scanner.error("REP", "El parametro name debe ser uno de los siguientes: mbr, ebr, disk, inode, journaling, block, bm_inode, bm_block, tree, sb, file, ls")
             return
         
@@ -726,7 +686,7 @@ class Disk:
             if not os.path.exists(carpetaReporte): #Si no existe la carpeta, se crea
                 os.makedirs(carpetaReporte, exist_ok=True)
 
-            Disk.graficarReporte(pathDisco, path, name, mbr, particion)
+            Disk.graficarReporte(pathDisco, path, name, mbr, particion, ruta)
             return
         
         except Exception as e:
@@ -734,7 +694,7 @@ class Disk:
             print("ERROR: ",e)
            
     @staticmethod
-    def graficarReporte(pathDisco, path, name, mbr, particion): #path del disco en el sistema, path del reporte, nombre del reporte, mbr del disco
+    def graficarReporte(pathDisco, path, name, mbr, particion, ruta): #path del disco en el sistema, path del reporte, nombre del reporte, mbr del disco
 
         lista_particiones = mbr.getParticiones() #Obtener lista de particiones
 
@@ -885,7 +845,7 @@ class Disk:
                 texto_tabla += '''
                     </TABLE> >'''
                 
-                texto_tabla = Disk.limpiar_texto(texto_tabla)
+                texto_tabla = (texto_tabla)
                 # Nodos de la tabla
                 graph.node('node', label=texto_tabla)
 
@@ -1033,7 +993,7 @@ class Disk:
                 texto_tabla += '''
                     </TABLE> >'''
                 
-                texto_tabla = Disk.limpiar_texto(texto_tabla)
+                texto_tabla = (texto_tabla)
                 # Nodos de la tabla
                 graph.node('node1', label=texto_tabla)
 
@@ -1114,7 +1074,6 @@ class Disk:
 
                 #definir rankdir LR
                 graph.attr(rankdir='LR', nodesep='0.5', ranksep='1.0')
-
                 sprBloque = desempaquetarSuperBloque(pathDisco, particion)
                 numeroInodos = sprBloque.s_inodes_count - sprBloque.s_free_inodes_count
 
@@ -1381,7 +1340,7 @@ class Disk:
                 #Cerrar tabla
                 texto_tabla += '''
                     </TABLE> >'''
-                texto_tabla = Disk.limpiar_texto(texto_tabla)
+                texto_tabla = (texto_tabla)
 
                 # Nodos de la tabla
                 graph.node('node', label=texto_tabla)
@@ -1392,9 +1351,45 @@ class Disk:
                 main.Scanner.mensaje("REP", "Reporte SB generado exitosamente en la ruta: %s" % path)
                 return
             case "file": #Reporte del disco
-                pass
-            case "ls": #Reporte del disco
-                pass
+                
+                if not path.endswith(".txt"):
+                    main.Scanner.error("REP", "El reporte file solo se puede generar en formato txt")
+                    return
+
+                if ruta.startswith("\"") and ruta.endswith("\""):
+                    ruta = ruta[1:-1]
+
+                sprBloque = desempaquetarSuperBloque(pathDisco, particion)
+                inodo = getInodoByPath(pathDisco, sprBloque, ruta)
+
+                if inodo == None:
+                    main.Scanner.error("REP", "No se encontro el archivo en la ruta: %s" % ruta)
+                    return
+                
+                if inodo.i_type != 1:
+                    main.Scanner.error("REP", "El inodo encontrado no es un archivo")
+                    return
+                
+                concatenadorTexto = ""
+
+                for i_block in inodo.i_block:
+                    if i_block != -1:
+                        bloque = getBloqueArchivo(pathDisco, sprBloque, i_block)
+                        concatenadorTexto += bloque.b_content.decode('ascii').replace('\x00', '')
+
+                #crear archivo de texto
+                try:
+                    with open(path, 'w') as archivo:
+                        archivo.write(concatenadorTexto)
+                except Exception as e:
+                    main.Scanner.error("REP", "Error al crear el archivo en la ruta: %s" % path)
+                    print("ERROR: ",e)
+                    return
+                finally:
+                    archivo.close()
+
+                main.Scanner.mensaje("REP", "Reporte file generado exitosamente en la ruta: %s" % path)
+                return
             case _:
                 main.Scanner.error("REP", "El reporte con nombre %s no existe" % name)
 
@@ -1754,20 +1749,6 @@ class Disk:
                     main.Scanner.mensaje("FDISK", "Espacio agregado cancelado")
                     return
 
-    @staticmethod
-    def limpiar_texto(texto):
-
-        texto_normalizado = unicodedata.normalize('NFKD', texto)
-
-        # Patrón de expresión regular para encontrar caracteres no deseados
-        patron = r'[^a-zA-Z0-9\s.,!?¡¿\'"<>\-]' # Este patrón permite caracter UTF-8
-
-        # Reemplaza los caracteres no deseados por espacios en blanco
-        texto_limpiado = re.sub(patron, ' ', texto_normalizado)
-
-        #return texto_limpiado
-        return texto
-    
 #<*> VALOR PARA INICIO DEL DISCO LOGICO
 def update_start_value(new_value):
     global startValue

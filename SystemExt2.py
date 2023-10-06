@@ -295,6 +295,58 @@ def getListaInodos(path, partition): #path, particion, tipo [0 = carpeta, 1 = ar
     finally:
         bfile.close()
 
+def getInodoByPath(path, sprBloque, pathFile):
+
+    directorios = pathFile.split('/') #separar la ruta en directorios
+    directorios = list(filter(None, directorios)) #eliminar los elementos vacios
+
+    nombreFinal = directorios[-1] #obtener el nombre de la carpeta
+    directorios = directorios[:-1] #obtener los directorios de la ruta
+
+    indexInodoPadre = 0
+    indexInodoPadreAnterior = 0
+             
+    if len(directorios) > 0 : #si hay directorios, es una carpeta en una ruta especifica
+        for directorio in directorios:
+        
+            #Siempre empezará en el inodo raiz
+            indexInodoPadreAnterior = indexInodoPadre
+
+            inodoTemp = getInodo(path, sprBloque, indexInodoPadre) #inodo segun el indice, [0 = raiz]
+
+            if inodoTemp.i_type == 0: #si es una carpeta
+
+                for i_block in inodoTemp.i_block: #contador de los bloques del inodo
+                    if i_block == -1: #si el bloque no tiene apuntador, continuar
+                        continue
+
+                    #bloque con apuntador a un bloque de carpetas
+                    bloque = getBloqueCarpeta(path, sprBloque, i_block)
+
+                    #i_content = 0 #contador del contenido del bloque
+                    for content in bloque.b_content:
+                        if content.b_name == directorio: #Se encontro el directorio
+                            indexInodoPadre = content.b_inodo #indice del inodo del directorio
+                            break
+                
+            if indexInodoPadre == indexInodoPadreAnterior: #si no se encontro el directorio
+                return None
+
+        #Se encontro el directorio
+    
+    inodo = getInodo(path, sprBloque, indexInodoPadre) #obtener el inodo del directorio
+    
+    for i_block in inodo.i_block: #recorrer los apuntadores del inodo
+        if i_block != -1 : #si el apuntador esta en uso
+            bloque = getBloqueCarpeta(path, sprBloque, i_block) #obtener el bloque
+
+            for content in bloque.b_content: #recorrer el contenido del bloque
+                if content.b_name == nombreFinal: #si se encuentra el archivo
+                    inodoEncontrado = getInodo(path, sprBloque, content.b_inodo) #obtener el inodo del archivo
+                    return inodoEncontrado
+
+    return None
+           
 def updateNodo(sprBloque, pathDisco, inodo, i_node):
     print("Actualizando inodo No. %d" % i_node)
     print(inodo)

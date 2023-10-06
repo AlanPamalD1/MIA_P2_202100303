@@ -9,7 +9,6 @@ class FILES:
         self.mount = m
         self.logueado = logueado
     
-
     def mkfile(self, context): #path, ruta, tamaño, contenido segun archivo local
 
         required = main.Scanner.required_values("mkdir")
@@ -181,7 +180,6 @@ class FILES:
             FILES.addContentArchivo(pathDisco, partition, contenidoArchivo) #<+> Agregar contenido al archivo
             main.Scanner.mensaje("MKFILE", f"Se ha creado el archivo {nombreArchivo} en la ruta {concatenadorDirectorio} con éxito")
     
-
     #<#> Verificar existencia apuntador a bloque desde el index del inodo padre, retorna el index del apuntador y si se encontró
     @staticmethod
     def verificarExistenciaRuta(pathDisco, partition, indexInodoPadre, directorio, type=0):
