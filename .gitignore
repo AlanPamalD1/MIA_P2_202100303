@@ -171,7 +171,7 @@ ejecuciones/
 *.jpeg
 *.pdf
 *.adsj
-pruebaCont.txt
+*.txt
 
 #Archivos drawio
 *.drawio
