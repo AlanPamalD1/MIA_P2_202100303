@@ -1,5 +1,6 @@
 import Structs
 import struct
+from datetime import datetime
 
 #<#> MANEJO DEL SUPER BLOQUE
 
@@ -144,9 +145,6 @@ def addContentToBloqueArchivo(pathDisco, partition, indexInodo, contenido):
     sprBloque = Structs.SuperBloque()  # Crear una instancia de SuperBloque
     sprBloque = desempaquetarSuperBloque(pathDisco, partition)
     
-    #remplazar saltos de linea por \n en contenido
-    #contenido = contenido.replace("\n", "\\n")
-
     inodo = Structs.Inodos()
     inodo = getInodo(pathDisco, sprBloque, indexInodo)
     inodo.i_size += len(contenido)
@@ -198,9 +196,6 @@ def getContentBloqueArchivo(pathDisco, partition, indexInodo):
             bloque = Structs.BloquesArchivos()
             bloque = getBloqueArchivo(pathDisco, sprBloque, i_block)
             contenido += bloque.b_content
-
-    #remplazar \n por saltos de linea
-    contenido = contenido.replace("\\n", "\n")
     
     return contenido
 
@@ -246,13 +241,13 @@ def getInodo(path, sprBloque, num):
             inodo.i_uid = struct.unpack("<i", data[:4])[0]
             inodo.i_gid = struct.unpack("<i", data[4:8])[0]
             inodo.i_size = struct.unpack("<i", data[8:12])[0]
-            inodo.i_atime = struct.unpack("<d", data[12:20])[0]
+            inodo.i_atime = int(datetime.now().timestamp())
             inodo.i_ctime = struct.unpack("<d", data[20:28])[0]
             inodo.i_mtime = struct.unpack("<d", data[28:36])[0]
             inodo.i_block = list(struct.unpack("<15i", data[36:96]))
             inodo.i_type = struct.unpack("<B", data[96:97])[0]
             inodo.i_perm = struct.unpack("<i", data[97:101])[0]
-
+    
             return inodo
     except Exception as e:
         print(e)
@@ -303,6 +298,7 @@ def getListaInodos(path, partition): #path, particion, tipo [0 = carpeta, 1 = ar
 def updateNodo(sprBloque, pathDisco, inodo, i_node):
     print("Actualizando inodo No. %d" % i_node)
     print(inodo)
+    inodo.i_mtime = int(datetime.now().timestamp())
     tamanioInodos = struct.calcsize("<iiiddd15ici")
     inicioInodo = sprBloque.s_inode_start
 

@@ -5,6 +5,8 @@ class Structs:
     def __init__(self):
         pass
 
+
+
 @add_objprint
 class UsuarioActivo:
     def __init__(self):

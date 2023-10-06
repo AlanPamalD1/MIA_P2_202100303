@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import main
 import Structs
@@ -114,6 +115,9 @@ class FILES:
         indexInodoPadreAnterior = 0
 
         contenidoArchivo = ""
+
+        if len(nombreArchivo) > 12: #<#> Verificar que el nombre del archivo no exceda el tamaño maximo
+            raise Exception(f"El nombre del archivo {nombreArchivo} excede el tamaño maximo de 12 caracteres")
 
         if cont != "" : #<#> Si se especifica un contenido, se creará un archivo con el contenido especificado 
             if not os.path.exists(cont):
@@ -338,8 +342,8 @@ class FILES:
         inodo.i_gid = 1 #grupo root
         inodo.i_size = 0 #tamaño del archivo
         inodo.i_atime = sprBloque.s_umtime #ultima fecha de acceso
-        inodo.i_ctime = sprBloque.s_umtime #ultima fecha de modificacion
-        inodo.i_mtime = sprBloque.s_umtime #ultima fecha de creacion
+        inodo.i_ctime =  int(datetime.now().timestamp()) #fecha de creacion
+        inodo.i_mtime = int(datetime.now().timestamp()) #ultima fecha de modificacion
         inodo.i_type = typeInodo # 0 = carpeta, 1 = archivo
         inodo.i_perm = 664 #permisos de lectura y escritura
         inodo.i_block[0] = primerBloqueLibre #Apuntador al primer bloque libre

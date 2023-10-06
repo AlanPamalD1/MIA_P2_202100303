@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import os
 import sys
 import time
@@ -9,6 +9,7 @@ import struct
 import main
 from graphviz import Digraph
 import re
+from SystemExt2 import *
 
 class Disk:
     def __init__(self):
@@ -186,48 +187,11 @@ class Disk:
         finally:
             bfile.close()
 
-    #<b> Obtener particiones
-    @staticmethod
-    def desempaquetarSuperBloque(path, p):
-        try:
-            sprTemp = Structs.SuperBloque()  # Crear una instancia de SuperBloque
-            bytes_super_bloque = bytes(sprTemp)  # Obtener los bytes de la instancia
-
-            recuperado = bytearray(len(bytes_super_bloque))  # Crear un bytearray del mismo tamaño
-            with open(path, "rb") as archivo:
-                archivo.seek(p.part_start - 1)
-                archivo.readinto(recuperado)
-            
-            # Desempaquetar los datos del bytearray recuperado
-            sprTemp.s_filesystem_type = struct.unpack("<i", recuperado[:4])[0]
-            sprTemp.s_inodes_count = struct.unpack("<i", recuperado[4:8])[0]
-            sprTemp.s_blocks_count = struct.unpack("<i", recuperado[8:12])[0]
-            sprTemp.s_free_blocks_count = struct.unpack("<i", recuperado[12:16])[0]
-            sprTemp.s_free_inodes_count = struct.unpack("<i", recuperado[16:20])[0]
-            sprTemp.s_mtime = struct.unpack("<d", recuperado[20:28])[0]
-            sprTemp.s_umtime = struct.unpack("<d", recuperado[28:36])[0]
-            sprTemp.s_mnt_count = struct.unpack("<i", recuperado[36:40])[0]
-            sprTemp.s_magic = struct.unpack("<i", recuperado[40:44])[0]
-            sprTemp.s_inode_size = struct.unpack("<i", recuperado[44:48])[0]
-            sprTemp.s_block_size = struct.unpack("<i", recuperado[48:52])[0]
-            sprTemp.s_first_ino = struct.unpack("<i", recuperado[52:56])[0]
-            sprTemp.s_first_blo = struct.unpack("<i", recuperado[56:60])[0]
-            sprTemp.s_bm_inode_start = struct.unpack("<i", recuperado[60:64])[0]
-            sprTemp.s_bm_block_start = struct.unpack("<i", recuperado[64:68])[0]
-            sprTemp.s_inode_start = struct.unpack("<i", recuperado[68:72])[0]
-            sprTemp.s_block_start = struct.unpack("<i", recuperado[72:76])[0] 
-            return sprTemp
-        except Exception as e:
-            print(e) 
-            return None
-        finally:
-            archivo.close()
-
     @staticmethod
     def getListaInodos(path, partition): #path, particion, tipo [0 = carpeta, 1 = archivo]
 
         sprBloque = Structs.SuperBloque()
-        sprBloque = Disk.desempaquetarSuperBloque(path, partition)
+        sprBloque = desempaquetarSuperBloque(path, partition)
 
         if sprBloque == None:
             return None
@@ -726,7 +690,7 @@ class Disk:
                 main.Scanner.error("REP", "Falta el parametro %s en el comando" % r)
             return
 
-        if name not in ["mbr", "ebr","disk", "inode", "bm_inode", "bm_block", "tree", "sb", "file", "ls"]:
+        if name not in ["mbr","disk", "bm_inode", "bm_block", "tree", "sb", "file", "ls"]:
             main.Scanner.error("REP", "El parametro name debe ser uno de los siguientes: mbr, ebr, disk, inode, journaling, block, bm_inode, bm_block, tree, sb, file, ls")
             return
         
@@ -781,15 +745,20 @@ class Disk:
         #Nombre del disco
         nombreDisco = os.path.basename(pathDisco)
 
+        sprBloque = desempaquetarSuperBloque(pathDisco, particion) #Obtener el super bloque de la particion
+
         # colores de las celdas de las columnas segun el tipo de particion
         colores = {
-            "MBR": '#F5B041', #Naranja
-            "P": '#836096', #Morado
-            "E": '#C70039', #Rojo
-            "L": '#6585a5', #Azul
-            "EBR": '#4477CE', #Azul
-            "Libre": '#A8A196', #Gris
-            "SBloque": '#79AC78' #Naranja
+            "MBR": '#F5B041', #<td> Naranja
+            "P": '#836096', #<_> Morado
+            "E": '#C70039', #<!> Rojo
+            "L": '#6585a5', #<?> Azul
+            "EBR": '#4477CE', #<?> Azul
+            "Libre": '#A8A196', # Gris
+            "SBloque": '#79AC78', #<td> Naranja
+            "Inodo": '#3085C3', #<?> Azul
+            "BloqueC": '#79AC78', #<*> Verde
+            "BloqueA": '#F4E869', #<+> Amarillo
         }
 
         #Generar reporte en graphviz segun el tipo
@@ -824,7 +793,7 @@ class Disk:
                     <TR>
                         <TD WIDTH="40">{texto1}</TD>
                         <TD WIDTH="50">{texto2}</TD>
-                    </TR>'''.format(texto1="Fecha creación", texto2=datetime.datetime.fromtimestamp(mbr.mbr_fecha_creacion))
+                    </TR>'''.format(texto1="Fecha creación", texto2=datetime.fromtimestamp(mbr.mbr_fecha_creacion))
                 texto_tabla += '''
                     <TR>
                         <TD WIDTH="40">{texto1}</TD>
@@ -924,81 +893,6 @@ class Disk:
                 graph.render(pathRep, cleanup=True) 
 
                 main.Scanner.mensaje("REP", "Reporte MBR generado exitosamente en la ruta: %s" % path)
-                return
-            case "ebr": #Reporte de la particion extendida
-                # Grafo 
-                graph = Digraph('G',format=extension, engine='dot',comment='Reporte mbr')
-
-                # Agrega el texto superior al grafo
-                graph.attr(label="Reporte EBR "+ nombreDisco, labelloc='t', labeljust='c', fontsize='20', fontname='arial')
-
-                #atributos del nodo de la tabla
-                graph.attr('node', shape='plaintext', border='1', cellborder='1', cellpadding='8')
-
-                # texto de la tabla
-                texto_tabla = '''<
-                    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="7">
-                '''
-                
-                for part in lista_particiones: #Primera filas
-                    if part.part_name != "": #Si la particion tiene datos, sea activa o no
-                        
-                        if part.part_type.upper() == "E": #Particion extendida
-                            parts_logicas = Disk.getLogicas(part, pathDisco) #Obtener las particiones logicas
-                            #obtener logicas con un size mayor a 0
-
-                            parts_logicas = [logica for logica in parts_logicas if int(logica.part_size) > 0 ]
-
-                            for logica in parts_logicas:
-                                
-                                texto_tabla += '''
-                                    <TR>
-                                        <TD BGCOLOR="{color}" COLSPAN="2">{texto}</TD>
-                                    </TR>'''.format(color=colores["L"], texto="Partición")
-                                texto_tabla += '''
-                                    <TR>
-                                        <TD WIDTH="40">{texto1}</TD>
-                                        <TD WIDTH="60">{texto2}</TD>
-                                    </TR>'''.format(texto1="part status", texto2=logica.part_status)
-                                texto_tabla += '''
-                                    <TR>
-                                        <TD WIDTH="40">{texto1}</TD>
-                                        <TD WIDTH="60">{texto2}</TD>
-                                    </TR>'''.format(texto1="part name", texto2=logica.part_name)
-                                texto_tabla += '''
-                                    <TR>
-                                        <TD WIDTH="40">{texto1}</TD>
-                                        <TD WIDTH="60">{texto2}</TD>
-                                    </TR>'''.format(texto1="part next", texto2=logica.part_next)
-                                texto_tabla += '''
-                                    <TR>
-                                        <TD WIDTH="40">{texto1}</TD>
-                                        <TD WIDTH="60">{texto2}F</TD>
-                                    </TR>'''.format(texto1="part fit", texto2=logica.part_fit)
-                                texto_tabla += '''
-                                    <TR>
-                                        <TD WIDTH="40">{texto1}</TD>
-                                        <TD WIDTH="60">{texto2}</TD>
-                                    </TR>'''.format(texto1="part start", texto2=logica.part_start)
-                                texto_tabla += '''
-                                    <TR>
-                                        <TD WIDTH="40">{texto1}</TD>
-                                        <TD WIDTH="60">{texto2}</TD>
-                                    </TR>'''.format(texto1="part size", texto2=logica.part_size)
-                                
-                #Cerrar tabla
-                texto_tabla += '''
-                    </TABLE> >'''
-                
-                texto_tabla = Disk.limpiar_texto(texto_tabla)
-
-                # Nodos de la tabla
-                graph.node('node', label=texto_tabla)
-
-                # Renderizar y guardar
-                graph.render(pathRep, cleanup=True) 
-
-                main.Scanner.mensaje("REP", "Reporte EBR generado exitosamente en la ruta: %s" % path)
                 return
             case "disk": #Reporte del disco
                 tamanoDisco = mbr.mbr_tamano
@@ -1148,54 +1042,7 @@ class Disk:
 
                 main.Scanner.mensaje("REP", "Reporte disk generado en %s" % pathRep)
                 return
-            case "inode": #Reporte del disco (WIP)
-                #<+> Grafo 
-                graph = Digraph('G',format=extension, engine='dot',comment='Reporte inode', graph_attr={'rankdir': 'LR', 'nodesep': '0.5', 'ranksep': '1.0'})
-
-                # Agrega el texto superior al grafo
-                graph.attr(label="Reporte Inodos ", labelloc='t', labeljust='c', fontsize='20', fontname='arial')
-
-                listaInodos = Disk.getListaInodos(pathDisco, particion)
-                if listaInodos == None:
-                    main.Scanner.error("REP", "No se pudo leer la lista de inodos del disco en la ruta: %s" % pathDisco)
-                    return
-
-                contador = 0
-                for i, inodo in enumerate(listaInodos):
-                    # Crear una etiqueta con los atributos relevantes
-                    etiqueta = f'Inodo {i+1}\n'
-                    etiqueta += f'      i_uid: {inodo.i_uid}\n'
-                    etiqueta += f'      i_gid: {inodo.i_gid}\n'
-                    etiqueta += f'      i_size: {inodo.i_size}\n'
-                    etiqueta += f'      i_atime: {datetime.datetime.fromtimestamp(inodo.i_atime)}\n'
-                    etiqueta += f'      i_ctime: {datetime.datetime.fromtimestamp(inodo.i_ctime)}\n'
-                    etiqueta += f'      i_mtime: {datetime.datetime.fromtimestamp(inodo.i_mtime)}\n'
-
-                    # Bloques
-
-                    for j in range(14):
-                        etiqueta += f'      i_block_{j+1}: {inodo.i_block[j]}\n'
-
-                    etiqueta += f'      i_type: {inodo.i_type}\n'
-                    etiqueta += f'      i_perm: {inodo.i_perm}'
-
-                    # Agregar el bloque con la etiqueta
-                    etiqueta = Disk.limpiar_texto(etiqueta)
-                    graph.node(f'inodo{i}', label=etiqueta, shape='box')
-
-
-                    # Conectar el inodo actual con el siguiente (si no es el último)
-                    if i < len(listaInodos) - 1:
-                        graph.edge(f'inodo{i}', f'inodo{i+1}')
-
-
-                # Renderizar y guardar
-                graph.render(pathRep, cleanup=True) 
-
-                main.Scanner.mensaje("REP", "Reporte inode generado exitosamente en la ruta: %s" % path)
-                return
             case "bm_inode": #Reporte del disco
-                sprBloque = Disk.desempaquetarSuperBloque(pathDisco, particion)
 
                 if sprBloque == None:
                     main.Scanner.error("REP", "No se pudo leer el super bloque del disco en la ruta: %s" % pathDisco)
@@ -1231,7 +1078,7 @@ class Disk:
                     print("ERROR: ",e)
                     return
             case "bm_block": #Reporte del disco
-                sprBloque = Disk.desempaquetarSuperBloque(pathDisco, particion)
+                sprBloque =desempaquetarSuperBloque(pathDisco, particion)
 
                 if sprBloque == None:
                     main.Scanner.error("REP", "No se pudo leer el super bloque del disco en la ruta: %s" % pathDisco)
@@ -1263,7 +1110,160 @@ class Disk:
                     print("ERROR: ",e)
                     return
             case "tree": #Reporte del disco
-                pass
+                graph = Digraph('G',format=extension, engine='dot',comment='Reporte sb')
+
+                #definir rankdir LR
+                graph.attr(rankdir='LR', nodesep='0.5', ranksep='1.0')
+
+                sprBloque = desempaquetarSuperBloque(pathDisco, particion)
+                numeroInodos = sprBloque.s_inodes_count - sprBloque.s_free_inodes_count
+
+                for i in range(numeroInodos):
+                    inodoTemp = getInodo(pathDisco, sprBloque, i)
+
+                    if inodoTemp == None:
+                        continue
+
+                    labelInodo = '''<
+                    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="7">
+                    '''
+                    #encabezado
+                    labelInodo += '''
+                    <TR>
+                        <TD PORT=\"c\" BGCOLOR="{color}" COLSPAN="2">{texto}</TD>
+                    </TR>'''.format(color=colores["Inodo"], texto=f"Inodo {i}")
+                    
+                    #datos del nodo
+                    labelInodo += '''
+                    <TR>
+                        <TD WIDTH="60">i_uid</TD>
+                        <TD WIDTH="40">{t1}</TD>
+                    </TR>
+                    <TR>
+                        <TD WIDTH="60">i_gid</TD>
+                        <TD WIDTH="40">{t2}</TD>
+                    </TR>
+                    <TR>
+                        <TD WIDTH="60">i_size</TD>
+                        <TD WIDTH="40">{t3}</TD>
+                    </TR>
+                    <TR>
+                        <TD WIDTH="60">i_atime</TD>
+                        <TD WIDTH="40">{t4}</TD>
+                    </TR>
+                    <TR>
+                        <TD WIDTH="60">i_ctime</TD>
+                        <TD WIDTH="40">{t5}</TD>
+                    </TR>
+                    <TR>
+                        <TD WIDTH="60">i_mtime</TD>
+                        <TD WIDTH="40">{t6}</TD>
+                    </TR>
+                    <TR>
+                        <TD WIDTH="60">i_type</TD>
+                        <TD WIDTH="40">{t7}</TD>
+                    </TR>
+                    <TR>
+                        <TD WIDTH="60">i_perm</TD>
+                        <TD WIDTH="40">{t8}</TD>
+                    </TR>
+                    '''.format(t1= inodoTemp.i_uid, t2= inodoTemp.i_gid, t3= inodoTemp.i_size, t4= datetime.fromtimestamp(inodoTemp.i_atime), t5= datetime.fromtimestamp(inodoTemp.i_ctime), t6= datetime.fromtimestamp(inodoTemp.i_mtime), t7= inodoTemp.i_type, t8= inodoTemp.i_perm)
+                    
+                    contadorIblock = 0
+                    for i_block in inodoTemp.i_block:
+
+                        #<#> datos del apuntador
+                        labelInodo += '''
+                        <TR>
+                            <TD WIDTH="60">i_block</TD>
+                            <TD WIDTH="40" PORT=\"{port}\">{t1}</TD>
+                        </TR>
+                        '''.format(t1= i_block, port=contadorIblock)
+
+                        if i_block != -1: #el apuntador esta en uso
+                            
+                            #<#> creacion de bloque
+                            if inodoTemp.i_type == 0: #<*> carpeta
+                                #creacion de tabla de carpetas
+                                bloqueTemp = getBloqueCarpeta(pathDisco, sprBloque, i_block)
+                                labelBloque = '''<
+                                    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="7">
+                                '''
+                                #encabezado
+                                labelBloque += '''
+                                    <TR>
+                                        <TD BGCOLOR="{color}" PORT=\"c\" COLSPAN="2">{texto}</TD>
+                                    </TR>'''.format(color=colores["BloqueC"], texto=f"Bloque {i_block}")
+                                
+                                contadorContentBlock = 0
+
+                                for content in bloqueTemp.b_content: #contenido del bloque
+                                    labelBloque += '''
+                                        <TR>
+                                            <TD WIDTH="60">{t1}</TD>
+                                            <TD WIDTH="40" PORT=\"{port}\">{t2}</TD>
+                                        </TR>
+                                        '''.format(t1= content.b_name, t2= content.b_inodo, port = contadorContentBlock)
+                                    
+                                    #crear arista entre bloque a inodo
+                                    if content.b_inodo != -1 and content.b_name != "." and content.b_name != "..":
+                                        graph.edge(f'bloque{i_block}:{contadorContentBlock}', f'inodo{content.b_inodo}:c')
+                                    
+                                    contadorContentBlock += 1
+
+                                #cerrar tabla
+                                labelBloque += '''
+                                    </TABLE> >'''
+                                
+                                #crear nodo
+                                graph.node(f'bloque{i_block}', label=labelBloque, shape='box')
+
+                                #crear arista entre inodo y bloque
+                                graph.edge(f'inodo{i}:{contadorIblock}', f'bloque{i_block}:c')
+
+                            elif inodoTemp.i_type == 1: #<+> archivo
+                                #creacion de tabla de archivos
+                                bloqueTemp = getBloqueArchivo(pathDisco, sprBloque, i_block)
+                                labelBloque = '''<
+                                    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="7">
+                                '''
+                                #encabezado
+                                labelBloque += '''
+                                    <TR>
+                                        <TD PORT=\"c\" BGCOLOR="{color}">{texto}</TD>
+                                    </TR>'''.format(color=colores["BloqueA"], texto=f"Bloque {i_block}")
+                                #contenido del bloque
+
+                                contentArchivo = str(bloqueTemp.b_content.decode('ascii').replace('\x00', ''))
+
+                                labelBloque += '''
+                                    <TR>
+                                        <TD WIDTH="60">{texto}</TD>
+                                    </TR>
+                                    '''.format(texto=contentArchivo)
+                                #cerrar tabla
+                                labelBloque += '''
+                                    </TABLE> >'''
+                                
+                                #crear nodo
+                                graph.node(f'bloque{i_block}', label=labelBloque, shape='box')
+
+                                #crear arista entre inodo y bloque
+                                graph.edge(f'inodo{i}:{contadorIblock}', f'bloque{i_block}:c')
+                        
+                        contadorIblock += 1
+                        
+                    #cerrar tabla
+                    labelInodo += '''
+                    </TABLE> >'''
+
+                    graph.node(f'inodo{i}', label=labelInodo, shape='box')
+
+                # Renderizar y guardar
+                graph.render(pathRep, cleanup=True)
+                main.Scanner.mensaje("REP", "Reporte TREE generado exitosamente en la ruta: %s" % path)
+
+                return
             case "sb": #Reporte del super bloque
                 # Grafo 
                 graph = Digraph('G',format=extension, engine='dot',comment='Reporte sb')
@@ -1279,7 +1279,6 @@ class Disk:
                     <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="7">
                 '''
                 
-                sprBloque = Disk.desempaquetarSuperBloque(pathDisco, particion)
                 if sprBloque == None:
                     main.Scanner.error("REP", "No se pudo leer el super bloque del disco en la ruta: %s" % pathDisco)
                     return
@@ -1322,12 +1321,12 @@ class Disk:
                     <TR>
                         <TD WIDTH="40">{texto1}</TD>
                         <TD WIDTH="60">{texto2}</TD>
-                    </TR>'''.format(texto1="s_mtime", texto2=datetime.datetime.fromtimestamp(sprBloque.s_mtime))
+                    </TR>'''.format(texto1="s_mtime", texto2=datetime.fromtimestamp(sprBloque.s_mtime))
                 texto_tabla += '''
                     <TR>
                         <TD WIDTH="40">{texto1}</TD>
                         <TD WIDTH="60">{texto2}</TD>
-                    </TR>'''.format(texto1="s_umtime", texto2=datetime.datetime.fromtimestamp(sprBloque.s_umtime))
+                    </TR>'''.format(texto1="s_umtime", texto2=datetime.fromtimestamp(sprBloque.s_umtime))
                 texto_tabla += '''
                     <TR>
                         <TD WIDTH="40">{texto1}</TD>
