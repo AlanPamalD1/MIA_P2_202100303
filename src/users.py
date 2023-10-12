@@ -1,7 +1,7 @@
 import mount as Mount
 import Structs
-import main as main
-from SystemExt2 import *
+import Scanner as Scanner
+from Ext2 import *
 
 class Sesion:
     def __init__(self):
@@ -41,7 +41,7 @@ class Usuarios:
                 password = current
 
         if id == "" or user == "" or password == "":
-            print("LOGIN: Necesita parámetros obligatorios")
+            Scanner.mensaje("LOGIN", "Necesita parámetros obligatorios")
             return False, None
 
         return self.sesion_activa(user, password, id), logueado
@@ -98,19 +98,18 @@ class Usuarios:
                         logueado.guid = int(registro[0]) #actualizar el guid del usuario
 
             if userEncontrado:
-                print(f"Bienvenido {usr}")
+                Scanner.mensaje("LOGIN", f"Bienvenido {usr}")
                 return True
 
             #<!> No se encontró el usuario
             raise RuntimeError("No se encontró el usuario")
         except Exception as e:
-            print("MKUSR", str(e))
+            Scanner.error("LOGIN", str(e))
             return False
 
     def logout(self):
         global logueado
-        print("Cerrando sesión...")
-        print(f"Hasta la proxima {logueado.user}") 
+        Scanner.mensaje("LOGOUT", f"Cerrando sesión\nHasta la proxima {logueado.user}...")
         logueado = Structs.UsuarioActivo()
         actualSesion = Sesion()
         return False
@@ -123,21 +122,22 @@ class Usuarios:
             current = current[current.find('=') + 1:]
             if current.startswith("\"") and current.endswith("\""):
                 current = current[1:-1]
-            elif main.Scanner.comparar(id_, "name"):
+            elif Scanner.comparar(id_, "name"):
                 name = current
 
         try:
 
             if name == "":
                 print(action + "GRP", "No se encontró el parámetro \"name\"")
+                Scanner.error(action + "GRP", "No se encontró el parámetro \"name\"")
                 return
-            elif main.Scanner.comparar(action, "MK"):
+            elif Scanner.comparar(action, "MK"):
                 self.mkgrp(name)
             else:
                 self.rmgrp(name)
         
         except Exception as e:
-            main.Scanner.error(action + "GRP", "Error al ejecutar el comando")
+            Scanner.error(action + "GRP", "Error al ejecutar el comando")
             print(e)
 
     def mkgrp(self, name):
@@ -255,14 +255,14 @@ class Usuarios:
             if current[:1] == "\"":
                 current = current[1:-1]
 
-            if main.Scanner.comparar(id_, "user"):
+            if Scanner.comparar(id_, "user"):
                 usr = current
-            elif main.Scanner.comparar(id_, "pass"):
+            elif Scanner.comparar(id_, "pass"):
                 pwd = current
-            elif main.Scanner.comparar(id_, "grp"):
+            elif Scanner.comparar(id_, "grp"):
                 grp = current
 
-        if main.Scanner.comparar(action, "MK"):
+        if Scanner.comparar(action, "MK"):
             if usr == "" or pwd == "" or grp == "":
                 print(action + "GRP", "Necesita parámetros obligatorios")
             else:

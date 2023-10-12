@@ -3,13 +3,11 @@ import os
 import sys
 import time
 import random
-import unicodedata
 import Structs
 import struct
-import main
+import Scanner as Scanner
 from graphviz import Digraph
-import re
-from SystemExt2 import *
+from Ext2 import *
 
 class Disk:
     def __init__(self):
@@ -94,7 +92,7 @@ class Disk:
             
             try:
                 Disk.buscarParticiones(mbr, n, p)
-                main.Scanner.mensaje("FDISK", "El nombre: %s ya existe en el disco" %n)
+                Scanner.mensaje("FDISK", "El nombre: %s ya existe en el disco" %n)
                 return
             except Exception as e:
                 print(e)
@@ -119,15 +117,15 @@ class Disk:
                         ebr.part_start = startValue 
                         bfile.seek(startValue, 0)
                         bfile.write(ebr.__bytes__())
-                        main.Scanner.mensaje("FDISK", "partición extendida: %s creada correctamente" %n)
+                        Scanner.mensaje("FDISK", "partición extendida: %s creada correctamente" %n)
                         return
-                    main.Scanner.mensaje("FDISK", "partición primaria: %s creada correctamente" %n)
+                    Scanner.mensaje("FDISK", "partición primaria: %s creada correctamente" %n)
             finally:
                 bfile.close()  # Cierra el archivo
         except ValueError as e: 
-            main.Scanner.error("FDISK", "-size debe ser un entero")
+            Scanner.error("FDISK", "-size debe ser un entero")
         except Exception as e: 
-            main.Scanner.error("FDISK", str(e))
+            Scanner.error("FDISK", str(e))
 
     @staticmethod
     def generarParticionLogica(partition, ep, p): #temporal, extended, path
@@ -163,7 +161,7 @@ class Disk:
                         file.seek(addLogic.part_start)
                         file.write(addLogic.__bytes__())
                         name = nlogic.part_name
-                        main.Scanner.mensaje("Particion", "partición lógica: %s creada correctamente" %name)
+                        Scanner.mensaje("Particion", "partición lógica: %s creada correctamente" %name)
                         return
                     file.seek(tmp.part_next-1)
                     tmp_data = file.read(struct.calcsize("c2s3i3i16s"))
@@ -179,10 +177,10 @@ class Disk:
             with open(path, "rb+") as bfile: #Abrir el archivo en modo lectura binaria
                 bfile.write(disco.__bytes__()) #Escribir el mbr actualizado en el archivo
             
-            main.Scanner.mensaje("FDISK", "Particiones actualizadas correctamente en el disco: %s" %path)
+            Scanner.mensaje("FDISK", "Particiones actualizadas correctamente en el disco: %s" %path)
             return
         except Exception as e:
-            main.Scanner.error("MBR", "Error al actualizar particiones en el disco: %s" % path)
+            Scanner.error("MBR", "Error al actualizar particiones en el disco: %s" % path)
             print(e)
         finally:
             bfile.close()
@@ -210,7 +208,7 @@ class Disk:
                         break
         except Exception as e:
             print(e)
-            main.Scanner.error("EBR", "Error al leer el disco en la ruta: %s" % path)
+            Scanner.error("EBR", "Error al leer el disco en la ruta: %s" % path)
             return [] # Si no se pudo leer el disco, se retorna una lista vacia
         finally:
             file.close()  # Cierra el archivo
@@ -325,7 +323,7 @@ class Disk:
             return mbr
         except IOError as e:
             # Maneja otros errores de E/S (lectura/escritura)
-            main.Scanner.error("E/S", "Error de escritura y/o lectura con el archivo.")
+            Scanner.error("E/S", "Error de escritura y/o lectura con el archivo.")
             print(e)
         except Exception as e:
             print(e)
@@ -439,42 +437,42 @@ class Disk:
         unit = ""
         path = ""
 
-        required = main.Scanner.required_values("mkdisk") #size, path
+        required = Scanner.required_values("mkdisk") #size, path
 
         for token in tokens:
             tk = token[:token.find('=')]
             token = token[token.find('=') + 1:]
 
-            if main.Scanner.comparar(tk, "fit"):
+            if Scanner.comparar(tk, "fit"):
                 if fit:
-                    main.Scanner.error("MKDISK","Parametro f repetido en el comando.")
+                    Scanner.error("MKDISK","Parametro f repetido en el comando.")
                     return
                 fit = token
                 
-            elif main.Scanner.comparar(tk, "size"):
+            elif Scanner.comparar(tk, "size"):
                 if size:
-                    main.Scanner.error("MKDISK","Parametro size repetido en el comando.")
+                    Scanner.error("MKDISK","Parametro size repetido en el comando.")
                     return
                 if tk in required:
                     required.remove(tk)
                     size = token
 
-            elif main.Scanner.comparar(tk, "unit"):
+            elif Scanner.comparar(tk, "unit"):
                 if unit:
-                    main.Scanner.error("MKDISK","Parametro unit repetido en el comando.")
+                    Scanner.error("MKDISK","Parametro unit repetido en el comando.")
                     return
                 if tk in required:
                     required.remove(tk)
                     unit = token
-            elif main.Scanner.comparar(tk, "path"):
+            elif Scanner.comparar(tk, "path"):
                 if unit:
-                    main.Scanner.error("MKDISK","Parametro path repetido en el comando.")
+                    Scanner.error("MKDISK","Parametro path repetido en el comando.")
                     return
                 if tk in required:
                     required.remove(tk)
                     path = token
             else:
-                main.Scanner.mensaje("MKDISK", "no se esperaba el parametro %s" % tk)
+                Scanner.mensaje("MKDISK", "no se esperaba el parametro %s" % tk)
                 break
 
         if not fit:
@@ -484,15 +482,15 @@ class Disk:
 
         if required:
             for r in required:
-                main.Scanner.error("MKDISK", "Falta el parametro %s en el comando" % r)
+                Scanner.error("MKDISK", "Falta el parametro %s en el comando" % r)
             return
 
         
         if fit not in ["BF", "FF", "WF"]:
-            main.Scanner.error("MKDISK", "Valor ingresado no válido para  el parametro FIT")
+            Scanner.error("MKDISK", "Valor ingresado no válido para  el parametro FIT")
             return
         if unit not in ["K", "M"]:
-            main.Scanner.error("MKDISK", "Valor ingresado no válido para  el parametro UNIT")
+            Scanner.error("MKDISK", "Valor ingresado no válido para  el parametro UNIT")
             return
         
         print("se va a crear el disco con los siguientes parametros")
@@ -508,7 +506,7 @@ class Disk:
         try:
             size = int(s)
             if size <= 0:
-                main.Scanner.error("MKDISK", "El parámetro size del comando MKDISK debe ser mayor a 0")
+                Scanner.error("MKDISK", "El parámetro size del comando MKDISK debe ser mayor a 0")
                 return
 
             if u == "M":
@@ -523,7 +521,7 @@ class Disk:
             disco.mbr_disk_signature = random.randint(100, 9999)
 
             if os.path.exists(path):
-                main.Scanner.error("MKDISK", "Disco ya existente en la ruta: "+path)
+                Scanner.error("MKDISK", "Disco ya existente en la ruta: "+path)
                 return
 
             folder_path = os.path.dirname(path)
@@ -538,7 +536,7 @@ class Disk:
                 path = path[1:-1]
 
             if not path.lower().endswith(".dsk"):
-                main.Scanner.error("MKDISK", "Extensión de archivo no válida para la creación del Disco.")
+                Scanner.error("MKDISK", "Extensión de archivo no válida para la creación del Disco.")
                 return
 
             # Manejar carpeta
@@ -553,35 +551,35 @@ class Disk:
                     file.write(b"\x00")
                     file.seek(0)
                     file.write(bytes(disco))
-                main.Scanner.mensaje("MKDISK", "Disco creado exitosamente en la ruta: %s " %path)
+                Scanner.mensaje("MKDISK", "Disco creado exitosamente en la ruta: %s " %path)
             except Exception as e:
                 print(e)
-                main.Scanner.error("MKDISK", "Error al crear el disco en la ruta: "+path)
+                Scanner.error("MKDISK", "Error al crear el disco en la ruta: "+path)
             finally:
                 file.close()  # Cierra el archivo
         except ValueError:
-            main.Scanner.error("MKDISK", "El parámetro size del comando MKDISK debe ser un número entero")
+            Scanner.error("MKDISK", "El parámetro size del comando MKDISK debe ser un número entero")
     
     #<b> RMDISK
     @staticmethod
     def rmdisk(tokens):
         path = ""
-        required = main.Scanner.required_values("rmdisk") #path
+        required = Scanner.required_values("rmdisk") #path
 
         for token in tokens:
             tk, _, token = token.partition("=")
-            if main.Scanner.comparar(tk, "path"):
+            if Scanner.comparar(tk, "path"):
                 if tk in required:
                     required.remove(tk)
                     path = token
             else:
                 path = ""
-                main.Scanner.error("RMDISK", "No se esperaba el parametro %s" % tk) 
+                Scanner.error("RMDISK", "No se esperaba el parametro %s" % tk) 
                 return
 
         if required:
             for r in required:
-                main.Scanner.error("RMDISK", "Falta el parametro %s en el comando" % r)
+                Scanner.error("RMDISK", "Falta el parametro %s en el comando" % r)
             return
 
             
@@ -590,24 +588,21 @@ class Disk:
                 path = path[1:-1]
 
             if not os.path.exists(path): #Si no existe la carpeta, se crea
-                main.Scanner.error("RMDISK", "No existe el disco en la ruta %s" % path)
+                Scanner.error("RMDISK", "No existe el disco en la ruta %s" % path)
                 return
 
             try:
                 if os.path.isfile(path):
                     if not path.endswith(".dsk"):
-                        main.Scanner.error("RMDISK", "El archivo debe de tener la extensión .dsk")
-                    if  main.Scanner.confirmar("Desea eliminar el archivo: "+path+"?"):
-                        os.remove(path)
-                        main.Scanner.mensaje("RMDISK", "Disco eliminado de la ruta %s" % path)
-                    else:
-                       main.Scanner.mensaje("RMDISK", "El disco no fue eliminado")
-                       return
+                        Scanner.error("RMDISK", "El archivo debe de tener la extensión .dsk")
+                    # Eliminar el archivo
+                    os.remove(path)
+                    Scanner.mensaje("RMDISK", "Disco eliminado de la ruta %s" % path)
                 else:
-                    main.Scanner.error("RMDISK", "No existe el disco en la ruta %s" % path)
+                    Scanner.error("RMDISK", "No existe el disco en la ruta %s" % path)
             except Exception as e:
                 print(e)
-                main.Scanner.error("RMDISK", "Error al eliminar el disco en la ruta: %s" % path)
+                Scanner.error("RMDISK", "Error al eliminar el disco en la ruta: %s" % path)
 
     #<b> REP
     @staticmethod
@@ -617,7 +612,7 @@ class Disk:
         id_part = ""
         ruta = ""
 
-        required = main.Scanner.required_values("rep")
+        required = Scanner.required_values("rep")
         
         for token in tokens:
             
@@ -627,36 +622,36 @@ class Disk:
             if token.startswith("\"") and token.endswith("\""):
                 token = token[1:-1]
 
-            if main.Scanner.comparar(id, "name"):
+            if Scanner.comparar(id, "name"):
                 if id in required:
                     required.remove(id)
                 name = token
-            elif main.Scanner.comparar(id, "path"):
+            elif Scanner.comparar(id, "path"):
                 if id in required:
                     required.remove(id)
                 path = token
-            elif main.Scanner.comparar(id, "id"):
+            elif Scanner.comparar(id, "id"):
                 if id in required:
                     required.remove(id)
                 id_part = token
-            elif main.Scanner.comparar(id, "ruta"):
+            elif Scanner.comparar(id, "ruta"):
                 ruta = token
             else:
-                main.Scanner.mensaje("REP", "no se esperaba el parametro %s" % token)
+                Scanner.mensaje("REP", "no se esperaba el parametro %s" % token)
                 break
         
         if required:
             for r in required:
-                main.Scanner.error("REP", "Falta el parametro %s en el comando" % r)
+                Scanner.error("REP", "Falta el parametro %s en el comando" % r)
             return
 
         if name not in ["mbr","disk", "bm_inode", "bm_block", "tree", "sb", "file"]:
-            main.Scanner.error("REP", "El parametro name debe ser uno de los siguientes: mbr, ebr, disk, inode, journaling, block, bm_inode, bm_block, tree, sb, file, ls")
+            Scanner.error("REP", "El parametro name debe ser uno de los siguientes: mbr, ebr, disk, inode, journaling, block, bm_inode, bm_block, tree, sb, file, ls")
             return
         
         if name in ["file", "ls"]:
             if not ruta:
-                main.Scanner.error("REP", "El parametro ruta es obligatorio para los comandos con name file y ls")
+                Scanner.error("REP", "El parametro ruta es obligatorio para los comandos con name file y ls")
                 return
 
         try: 
@@ -690,7 +685,7 @@ class Disk:
             return
         
         except Exception as e:
-            main.Scanner.error("REP", "Error al leer el disco en la ruta: %s" % path)
+            Scanner.error("REP", "Error al leer el disco en la ruta: %s" % path)
             print("ERROR: ",e)
            
     @staticmethod
@@ -852,7 +847,7 @@ class Disk:
                 # Renderizar y guardar
                 graph.render(pathRep, cleanup=True) 
 
-                main.Scanner.mensaje("REP", "Reporte MBR generado exitosamente en la ruta: %s" % path)
+                Scanner.mensaje("REP", "Reporte MBR generado exitosamente en la ruta: %s" % path)
                 return
             case "disk": #Reporte del disco
                 tamanoDisco = mbr.mbr_tamano
@@ -1000,16 +995,16 @@ class Disk:
                 # Renderizar y guardar
                 graph.render(pathRep, cleanup=True)
 
-                main.Scanner.mensaje("REP", "Reporte disk generado en %s" % pathRep)
+                Scanner.mensaje("REP", "Reporte disk generado en %s" % pathRep)
                 return
             case "bm_inode": #Reporte del disco
 
                 if sprBloque == None:
-                    main.Scanner.error("REP", "No se pudo leer el super bloque del disco en la ruta: %s" % pathDisco)
+                    Scanner.error("REP", "No se pudo leer el super bloque del disco en la ruta: %s" % pathDisco)
                     return
                 
                 if extension != "txt":
-                    main.Scanner.error("REP", "El reporte bm_inode solo se puede generar en formato txt")
+                    Scanner.error("REP", "El reporte bm_inode solo se puede generar en formato txt")
                     return
                 
                 textoBitmap = ""
@@ -1031,21 +1026,21 @@ class Disk:
                             linea = linea.replace("1", "1 ")
                             archivo.write(linea + '\n')  # Escribe la línea en el archivo con un salto de línea
 
-                    main.Scanner.mensaje("REP", "Reporte bm_inode generado exitosamente en la ruta: %s" % path)
+                    Scanner.mensaje("REP", "Reporte bm_inode generado exitosamente en la ruta: %s" % path)
                     return
                 except Exception as e:
-                    main.Scanner.error("REP", "Error al leer el disco en la ruta: %s" % pathDisco)
+                    Scanner.error("REP", "Error al leer el disco en la ruta: %s" % pathDisco)
                     print("ERROR: ",e)
                     return
             case "bm_block": #Reporte del disco
                 sprBloque =desempaquetarSuperBloque(pathDisco, particion)
 
                 if sprBloque == None:
-                    main.Scanner.error("REP", "No se pudo leer el super bloque del disco en la ruta: %s" % pathDisco)
+                    Scanner.error("REP", "No se pudo leer el super bloque del disco en la ruta: %s" % pathDisco)
                     return
                 
                 if extension != "txt":
-                    main.Scanner.error("REP", "El reporte bm_inode solo se puede generar en formato txt")
+                    Scanner.error("REP", "El reporte bm_inode solo se puede generar en formato txt")
                     return
                 
                 textoBitmap = ""
@@ -1063,10 +1058,10 @@ class Disk:
                             linea = linea.replace("1", "1 ")
                             archivo.write(linea + '\n')  # Escribe la línea en el archivo con un salto de línea
 
-                    main.Scanner.mensaje("REP", "Reporte bm_inode generado exitosamente en la ruta: %s" % path)
+                    Scanner.mensaje("REP", "Reporte bm_inode generado exitosamente en la ruta: %s" % path)
                     return
                 except Exception as e:
-                    main.Scanner.error("REP", "Error al leer el disco en la ruta: %s" % pathDisco)
+                    Scanner.error("REP", "Error al leer el disco en la ruta: %s" % pathDisco)
                     print("ERROR: ",e)
                     return
             case "tree": #Reporte del disco
@@ -1220,7 +1215,7 @@ class Disk:
 
                 # Renderizar y guardar
                 graph.render(pathRep, cleanup=True)
-                main.Scanner.mensaje("REP", "Reporte TREE generado exitosamente en la ruta: %s" % path)
+                Scanner.mensaje("REP", "Reporte TREE generado exitosamente en la ruta: %s" % path)
 
                 return
             case "sb": #Reporte del super bloque
@@ -1239,7 +1234,7 @@ class Disk:
                 '''
                 
                 if sprBloque == None:
-                    main.Scanner.error("REP", "No se pudo leer el super bloque del disco en la ruta: %s" % pathDisco)
+                    Scanner.error("REP", "No se pudo leer el super bloque del disco en la ruta: %s" % pathDisco)
                     return
 
                 texto_tabla += '''
@@ -1348,12 +1343,12 @@ class Disk:
                 # Renderizar y guardar
                 graph.render(pathRep, cleanup=True) 
 
-                main.Scanner.mensaje("REP", "Reporte SB generado exitosamente en la ruta: %s" % path)
+                Scanner.mensaje("REP", "Reporte SB generado exitosamente en la ruta: %s" % path)
                 return
             case "file": #Reporte del disco
                 
                 if not path.endswith(".txt"):
-                    main.Scanner.error("REP", "El reporte file solo se puede generar en formato txt")
+                    Scanner.error("REP", "El reporte file solo se puede generar en formato txt")
                     return
 
                 if ruta.startswith("\"") and ruta.endswith("\""):
@@ -1363,11 +1358,11 @@ class Disk:
                 inodo = getInodoByPath(pathDisco, sprBloque, ruta)
 
                 if inodo == None:
-                    main.Scanner.error("REP", "No se encontro el archivo en la ruta: %s" % ruta)
+                    Scanner.error("REP", "No se encontro el archivo en la ruta: %s" % ruta)
                     return
                 
                 if inodo.i_type != 1:
-                    main.Scanner.error("REP", "El inodo encontrado no es un archivo")
+                    Scanner.error("REP", "El inodo encontrado no es un archivo")
                     return
                 
                 concatenadorTexto = ""
@@ -1382,16 +1377,16 @@ class Disk:
                     with open(path, 'w') as archivo:
                         archivo.write(concatenadorTexto)
                 except Exception as e:
-                    main.Scanner.error("REP", "Error al crear el archivo en la ruta: %s" % path)
+                    Scanner.error("REP", "Error al crear el archivo en la ruta: %s" % path)
                     print("ERROR: ",e)
                     return
                 finally:
                     archivo.close()
 
-                main.Scanner.mensaje("REP", "Reporte file generado exitosamente en la ruta: %s" % path)
+                Scanner.mensaje("REP", "Reporte file generado exitosamente en la ruta: %s" % path)
                 return
             case _:
-                main.Scanner.error("REP", "El reporte con nombre %s no existe" % name)
+                Scanner.error("REP", "El reporte con nombre %s no existe" % name)
 
     #<b> FDISK
     @staticmethod
@@ -1402,12 +1397,12 @@ class Disk:
             current = current[current.find('=') + 1:]
             if current[:1] == "\"":
                 current = current[1:-1]
-            if main.Scanner.comparar(id, "delete"):
+            if Scanner.comparar(id, "delete"):
                 eliminar = True
 
 
         if not eliminar:
-            required = main.Scanner.required_values("fdisk")
+            required = Scanner.required_values("fdisk")
             size = ""
             path = ""
             unit = "K" # Kilobytes por defecto
@@ -1423,33 +1418,33 @@ class Disk:
                 if current.startswith("\"") and current.endswith("\""):
                     current = current[1:-1]
 
-                if main.Scanner.comparar(id, "size"):
+                if Scanner.comparar(id, "size"):
                     size = current
-                elif main.Scanner.comparar(id, "name"):
+                elif Scanner.comparar(id, "name"):
                     if id in required:
                         required.remove(id)
                         name = current
-                elif main.Scanner.comparar(id, "path"):
+                elif Scanner.comparar(id, "path"):
                     if id in required:
                         required.remove(id)
                         path = current
-                elif main.Scanner.comparar(id, "unit"):
+                elif Scanner.comparar(id, "unit"):
                     unit = current
-                elif main.Scanner.comparar(id, "type"):
+                elif Scanner.comparar(id, "type"):
                     type = current
-                elif main.Scanner.comparar(id, "fit"):
+                elif Scanner.comparar(id, "fit"):
                     fit = current
-                elif main.Scanner.comparar(id, "add"):
+                elif Scanner.comparar(id, "add"):
                     add = current
 
             if required:
                 for r in required:
-                    main.Scanner.error("FDISK", "Falta el parametro %s en el comando" % r)
+                    Scanner.error("FDISK", "Falta el parametro %s en el comando" % r)
                 return
             
             if add:
                 if unit.lower() not in ["b", "k", "m"]:
-                    main.Scanner.error("FDISK", "El parametro unit solo permite B, K o M")
+                    Scanner.error("FDISK", "El parametro unit solo permite B, K o M")
                     return
 
                 _size = int(add)
@@ -1459,20 +1454,20 @@ class Disk:
                     _size *= 1024 * 1024
 
                 if _size == 0 :
-                    main.Scanner.error("FDISK", "El parametro size no puede ser0")
+                    Scanner.error("FDISK", "El parametro size no puede ser0")
                     return
 
                 Disk.agregarEspacio(_size, name, path) #Agregar espacio (positivo o negativo) a particion
                 return
             else: # Se creara una particion
                 if not size:
-                    main.Scanner.error("FDISK", "El parametro size es obligatorio.")
+                    Scanner.error("FDISK", "El parametro size es obligatorio.")
                     return
             
                 Disk.generarParticion(size, unit, path, type, fit, name, add)
                 return
         else: # Se eliminara una particion
-            required = main.Scanner.required_values("fdisk-delete")
+            required = Scanner.required_values("fdisk-delete")
             elimi = ""
             path = ""
             name = ""
@@ -1484,24 +1479,24 @@ class Disk:
                 if current.startswith("\"") and current.endswith("\""):
                     current = current[1:-1]
 
-                if main.Scanner.comparar(id, "path"):
+                if Scanner.comparar(id, "path"):
                     if id in required:
                         required.remove(id)
                         path = current
-                elif main.Scanner.comparar(id, "name"):
+                elif Scanner.comparar(id, "name"):
                     if id in required:
                         required.remove(id)
                         name = current
-                elif main.Scanner.comparar(id, "delete"):
+                elif Scanner.comparar(id, "delete"):
                     elimi = current
 
             if required:
                 for r in required:
-                    main.Scanner.error("FDISK", "Falta el parametro %s en el comando" % r)
+                    Scanner.error("FDISK", "Falta el parametro %s en el comando" % r)
                 return
 
             if mountInstance.isMountedPartition( name ):
-                main.Scanner.error("FDISK", "No se puede eliminar la partición si esta montada.")
+                Scanner.error("FDISK", "No se puede eliminar la partición si esta montada.")
                 return
         
             Disk.eliminarParticion(path, name, elimi)
@@ -1512,56 +1507,53 @@ class Disk:
         #name: nombre de la particion a eliminar
         #elimi: tipo de eliminacion, solo permite full
         if elimi.lower() != "full":
-            main.Scanner.error("FDISK", "El parametro delete solo permite full")
+            Scanner.error("FDISK", "El parametro delete solo permite full")
             return
         
         try:
             mbr = Disk.desempaquetarMbr(path)
         except Exception as e:
-            main.Scanner.error("FDISK", "Error al desampaquetar mbr en: %s" % path)
+            Scanner.error("FDISK", "Error al desampaquetar mbr en: %s" % path)
             print(e)
 
         lista_particiones = mbr.getParticiones() #Obtener lista de particiones
 
         contador = 1
 
-        if main.Scanner.confirmar("¿Desea eliminar la particion %s?" % name):
-            for part in lista_particiones: #Particiones primarias y extendidas
-                # Eliminar datos de la particion
-                if part.part_name == name:
-                    
-                    #Llenar de ceros el espacio de la particion
-                    Disk.vaciarParticionEnDisco(path, part) #Llenar de ceros la particion
-                    
-                    #Actualizar mbr
-                    part = Structs.Particion()
-                    part.part_fit = part.part_fit[0]
-                    mbr.setPartitionWIndex(part, contador)
-                    
-                    #Actualizar datos en disco
-                    Disk.actualizarMbr(path, mbr)
-                    return
+        
+        for part in lista_particiones: #Particiones primarias y extendidas
+            # Eliminar datos de la particion
+            if part.part_name == name:
                 
-                contador += 1
-
-            #Particiones logicas
-            contador = 0
-            for part in lista_particiones: #Particiones primarias y extendidas
-                if part.part_type.upper() == "E": #Particion extendida
-                    parts_logicas = Disk.getLogicas(part, path) #Obtener las particiones logicas
-                    for logica in parts_logicas:
-                        if logica.part_name == name: #Se encontró la particion logica
-                            #Llenar de ceros el espacio de la particion
-                            Disk.vaciarLogicaEnDisco(path, part, contador, parts_logicas) #Llenar de ceros la particion logica
-                            main.Scanner.mensaje("FDISK", "Particion %s eliminada correctamente" % name)
-                            return
-                        contador += 1
+                #Llenar de ceros el espacio de la particion
+                Disk.vaciarParticionEnDisco(path, part) #Llenar de ceros la particion
+                
+                #Actualizar mbr
+                part = Structs.Particion()
+                part.part_fit = part.part_fit[0]
+                mbr.setPartitionWIndex(part, contador)
+                
+                #Actualizar datos en disco
+                Disk.actualizarMbr(path, mbr)
+                return
             
-            main.Scanner.error("FDISK", "No se encontró la particion %s" % name)
-            return
-        else:
-            main.Scanner.mensaje("FDISK", "Eliminacion de particion cancelada")
-            return
+            contador += 1
+
+        #Particiones logicas
+        contador = 0
+        for part in lista_particiones: #Particiones primarias y extendidas
+            if part.part_type.upper() == "E": #Particion extendida
+                parts_logicas = Disk.getLogicas(part, path) #Obtener las particiones logicas
+                for logica in parts_logicas:
+                    if logica.part_name == name: #Se encontró la particion logica
+                        #Llenar de ceros el espacio de la particion
+                        Disk.vaciarLogicaEnDisco(path, part, contador, parts_logicas) #Llenar de ceros la particion logica
+                        Scanner.mensaje("FDISK", "Particion %s eliminada correctamente" % name)
+                        return
+                    contador += 1
+        
+        Scanner.error("FDISK", "No se encontró la particion %s" % name)
+        
 
     @staticmethod
     def vaciarParticionEnDisco(path, part):
@@ -1576,11 +1568,11 @@ class Disk:
                 file.write(zero*(part.part_size-1))
 
         except IOError as e:
-            main.Scanner.error("E/S", "Error de escritura y/o lectura con el archivo.")
+            Scanner.error("E/S", "Error de escritura y/o lectura con el archivo.")
             print(e)
         except Exception as e:
             print(e)
-            main.Scanner.error("PARTICION", "Error al eliminar la particion %s" % part.part_name)
+            Scanner.error("PARTICION", "Error al eliminar la particion %s" % part.part_name)
         finally:
             file.close()  # Cierra el archivo
 
@@ -1609,7 +1601,7 @@ class Disk:
             
                 return
             except Exception as e: 
-                main.Scanner.error("PARTICION", "Error al eliminar la particion logica %s" % p_logica.part_name)
+                Scanner.error("PARTICION", "Error al eliminar la particion logica %s" % p_logica.part_name)
                 print(e)
             finally:
                 file.close()  # Cierra el archivo
@@ -1629,7 +1621,7 @@ class Disk:
             
                 return
             except Exception as e: 
-                main.Scanner.error("PARTICION", "Error al eliminar la particion logica %s" % p_logica.part_name)
+                Scanner.error("PARTICION", "Error al eliminar la particion logica %s" % p_logica.part_name)
                 print(e)
             finally:
                 file.close()  # Cierra el archivo
@@ -1642,7 +1634,7 @@ class Disk:
         for part in mbr.getParticiones():
             if part.part_name == name:
                 Disk.agregarEspacioParti(size, name, path, mbr)
-                main.Scanner.mensaje("FDISK", "Espacio agregado correctamente")
+                Scanner.mensaje("FDISK", "Espacio agregado correctamente")
                 return
 
             if part.part_type == 'E':
@@ -1650,7 +1642,7 @@ class Disk:
                     if logica.part_name == name:
 
                         Disk.agregarEspacioLogi(size, part, name, path)
-                        main.Scanner.mensaje("FDISK", "Espacio agregado correctamente")
+                        Scanner.mensaje("FDISK", "Espacio agregado correctamente")
                         return
     
     @staticmethod
@@ -1667,35 +1659,30 @@ class Disk:
                 nuevoTamano = prt.part_size + size
 
                 if nuevoTamano < 0: #Si se quiere eliminar mas espacio del que tiene la particion
-                    main.Scanner.error("FDISK", "No se puede eliminar mas espacio del que tiene la particion")
+                    Scanner.error("FDISK", "No se puede eliminar mas espacio del que tiene la particion")
                     return
 
                 if prt.part_start + nuevoTamano > mbr.mbr_tamano: #Si se quiere agregar mas espacio del que tiene el disco
-                    main.Scanner.error("FDISK", "No hay espacio suficiente en el disco para agregar el espacio")
+                    Scanner.error("FDISK", "No hay espacio suficiente en el disco para agregar el espacio")
                     return
                 
                 #obtener particion siguiente
                 partSiguiente = l_particiones[contador+1] if contador+1 < len(l_particiones) else None
                 if partSiguiente: #Si hay una siguiente particion
                     if prt.part_start + nuevoTamano >= partSiguiente.part_start: #Si se quiere agregar mas espacio del que tiene el disco
-                        main.Scanner.error("FDISK", "No hay espacio suficiente espacio despues de la particion.")
+                        Scanner.error("FDISK", "No hay espacio suficiente espacio despues de la particion.")
                         return
 
                 prt.part_size = nuevoTamano
 
-                if main.Scanner.confirmar("¿Desea agregar %s al tamaño de la particion %s?" % (size, name)):
-                    
-                    #Actualizar mbr
-                    mbr.setParticionWName(prt, prt.part_name)
-                    Disk.actualizarMbr(path, mbr)
-                    return
-                else:
-                    main.Scanner.mensaje("FDISK", "Espacio agregado cancelado")
-                    return
-
+                #Actualizar mbr
+                mbr.setParticionWName(prt, prt.part_name)
+                Disk.actualizarMbr(path, mbr)
+                return
+                
             contador += 1
         
-        main.Scanner.error("FDISK", "No se encontró la particion %s" % name)
+        Scanner.error("FDISK", "No se encontró la particion %s" % name)
         return
 
     @staticmethod
@@ -1714,11 +1701,11 @@ class Disk:
                 nuevoTamano = logi.part_size + size
 
                 if nuevoTamano < 0:
-                    main.Scanner.error("FDISK", "No se puede eliminar mas espacio del que tiene la particion logica.")
+                    Scanner.error("FDISK", "No se puede eliminar mas espacio del que tiene la particion logica.")
                     return
 
                 if logi.part_start + nuevoTamano > extended.part_start + extended.part_size:
-                    main.Scanner.error("FDISK", "No hay espacio suficiente en la particion extendida para agregar el espacio.")
+                    Scanner.error("FDISK", "No hay espacio suficiente en la particion extendida para agregar el espacio.")
                     return
 
                 #obtener particion siguiente
@@ -1726,28 +1713,24 @@ class Disk:
 
                 if partSiguiente: #Si hay una siguiente particion
                     if logi.part_start + nuevoTamano > partSiguiente.part_start - sizeEbr:
-                        main.Scanner.error("FDISK", "No hay espacio suficiente espacio despues de la particion.")
+                        Scanner.error("FDISK", "No hay espacio suficiente espacio despues de la particion.")
                         return
                 
                 logi.part_size += size
-
-                if main.Scanner.confirmar("¿Desea agregar %s al tamaño de la particion %s?" % (size, name)):
                     
-                    try: #Actualizar datos en disco
-                        with open(path, "rb+") as file:
-                            file.seek(logi.part_start) #Mover el puntero al inicio de los datos de la logia
-                            file.write(logi.__bytes__()) #Escribir el ebr
-                        
-                        main.Scanner.mensaje("FDISK", "Espacio agregado correctamente")
-                        return
-                    except Exception as e: 
-                        main.Scanner.error("PARTICION", "Error al cambiar tamaño de la particion %s" % logi.part_name)
-                        print(e)
-                    finally:
-                        file.close()  # Cierra el archivo
-                else:
-                    main.Scanner.mensaje("FDISK", "Espacio agregado cancelado")
+                try: #Actualizar datos en disco
+                    with open(path, "rb+") as file:
+                        file.seek(logi.part_start) #Mover el puntero al inicio de los datos de la logia
+                        file.write(logi.__bytes__()) #Escribir el ebr
+                    
+                    Scanner.mensaje("FDISK", "Espacio agregado correctamente")
                     return
+                except Exception as e: 
+                    Scanner.error("PARTICION", "Error al cambiar tamaño de la particion %s" % logi.part_name)
+                    print(e)
+                finally:
+                    file.close()  # Cierra el archivo
+                
 
 #<*> VALOR PARA INICIO DEL DISCO LOGICO
 def update_start_value(new_value):

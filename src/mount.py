@@ -1,7 +1,7 @@
 import os
 import Structs
 import struct
-import main as main
+import Scanner as Scanner
 import disk as Disco
 
 class Mount:
@@ -11,12 +11,24 @@ class Mount:
             tmp = Structs.DiscoMontado()
             self.discoMontado.append(tmp) 
 
+    def __str__(self) -> str:
+        string = ""
+        string += ("\n<---------------------- LISTADO DE MOUNTS ---------------------->\n")
+        for i in range(99):
+            for j in range(26):
+                disco = self.discoMontado[i].particiones[j]
+                if disco.estado == '1':
+                    string += (str(j)+")\t  30"+str(j + 1) + disco.nombre_disco)+"\n"
+        string += ("\n<--------------------------------------------------------------->")
+
+        return string
+
     def validarDatos(self, context): 
         if not context:
             self.listaMount()
             return
         
-        required = main.Scanner.required_values("mount")
+        required = Scanner.required_values("mount")
         path = ""
         name = ""
 
@@ -26,21 +38,21 @@ class Mount:
             if current[0] == "\"":
                 current = current[1:-1]
 
-            if main.Scanner.comparar(id, "name"):
+            if Scanner.comparar(id, "name"):
                 if id in required:
                     required.remove(id)
                     name = current
-            elif main.Scanner.comparar(id, "path"):
+            elif Scanner.comparar(id, "path"):
                 if id in required:
                     required.remove(id)
                     path = current
             else:
-                main.Scanner.error("MOUNT", "no se esperaba el parametro %s" % tk)
+                Scanner.error("MOUNT", "no se esperaba el parametro %s" % tk)
                 break
 
         if required:
             for r in required:
-                main.Scanner.error("MOUNT", "falta el parametro obligatorio %s" % r)
+                Scanner.error("MOUNT", "falta el parametro obligatorio %s" % r)
             return
         
         self.mount(path, name)
@@ -98,17 +110,17 @@ class Mount:
             id = current.split('=')[0]
             current = current.split('=')[1]
 
-            if main.Scanner.comparar(id, "id"):
+            if Scanner.comparar(id, "id"):
                 if id in required:
                     required.remove(id)
                     id_ = current
             else:
-                main.Scanner.error("UNMOUNT", "no se esperaba el parametro %s" % current)
+                Scanner.error("UNMOUNT", "no se esperaba el parametro %s" % current)
                 break
 
         if required:
             for r in required:
-                main.Scanner.error("UNMOUNT", "falta el parametro obligatorio %s" % r)
+                Scanner.error("UNMOUNT", "falta el parametro obligatorio %s" % r)
             return
         
         self.unmount(id_)

@@ -1,16 +1,16 @@
-import main
+import Scanner as Scanner
 import time
 import Structs
 import mount as Mount
 import struct
-from SystemExt2 import *
+from Ext2 import *
 
 class MKFS:
     def __init__(self, m = Mount.Mount()):  
         self.mount = m
     
     def mkfs(self, context):
-        required = main.Scanner.required_values("mkfs")
+        required = Scanner.required_values("mkfs")
         id = ""
         type = "Full"
         
@@ -21,20 +21,20 @@ class MKFS:
             if current.startswith('"') and current.endswith('"'):
                 current = current[1:-1]
             
-            if main.Scanner.comparar(tk, "id"):
+            if Scanner.comparar(tk, "id"):
                 if not self.mount.isMountedId(current):
-                    main.Scanner.error("MKFS", "La partición no existe")
+                    Scanner.error("MKFS", "La partición no existe")
                     return
                 if tk in required:
                     required.remove(tk)
                 id = current
                 
-            elif main.Scanner.comparar(tk, "type"):
+            elif Scanner.comparar(tk, "type"):
                 type = current
         
         if required:
             for r in required:
-                main.Scanner.error("MKFS", "El parámetro " + r + " es obligatorio")
+                Scanner.error("MKFS", "El parámetro " + r + " es obligatorio")
             return
         
         self.formateo(id, type)
@@ -61,10 +61,10 @@ class MKFS:
             
             spr.s_filesystem_type = 2
             self.ext2(spr, partition, n, p)
-            main.Scanner.mensaje("MKFS", "Se ha formateado la partición: " + partition.part_name + " con formato EXT2 con éxito")
+            Scanner.mensaje("MKFS", "Se ha formateado la partición: " + partition.part_name + " con formato EXT2 con éxito")
              
         except Exception as e:
-            main.Scanner.error("MKFS", e)
+            Scanner.error("MKFS", e)
     
     def ext2(self, spr, p, n, path): #superbloque, particion, numero inodos, path
         # n -> número inodos y bloques

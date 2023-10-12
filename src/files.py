@@ -1,8 +1,8 @@
 from datetime import datetime
 import os
-import main
+import Scanner as Scanner
 import Structs
-from SystemExt2 import *
+from Ext2 import *
 
 class FILES:
     def __init__(self, m, logueado):  
@@ -11,7 +11,7 @@ class FILES:
     
     def mkfile(self, context): #path, ruta, tamaño, contenido segun archivo local
 
-        required = main.Scanner.required_values("mkdir")
+        required = Scanner.required_values("mkdir")
         path = ""
         size = 0
         cont = ""
@@ -29,7 +29,7 @@ class FILES:
             if current.startswith('"') and current.endswith('"'):
                 current = current[1:-1]
             
-            if main.Scanner.comparar(tk, "path"):
+            if Scanner.comparar(tk, "path"):
 
                 if not current.startswith("/"):
                     current = "/" + current #agregar / al inicio si no lo tiene
@@ -37,27 +37,27 @@ class FILES:
                 if tk in required:
                     required.remove(tk)
                 path = current
-            elif main.Scanner.comparar(tk, "size"):
+            elif Scanner.comparar(tk, "size"):
                 size = int(current)
-            elif main.Scanner.comparar(tk, "cont"):
+            elif Scanner.comparar(tk, "cont"):
                 cont = current
-            elif main.Scanner.comparar(tk, "r"):
+            elif Scanner.comparar(tk, "r"):
                 creacion = True
         
         if required:
             for r in required:
-                main.Scanner.error("MKFILE", "El parámetro " + r + " es obligatorio")
+                Scanner.error("MKFILE", "El parámetro " + r + " es obligatorio")
             return
         
         try:
             self.crearArchivo(path, size, cont, creacion)
         except Exception as e:
-            main.Scanner.error("MKFILE", "No se pudo crear el archivo: " + path)
+            Scanner.error("MKFILE", "No se pudo crear el archivo: " + path)
             print(e)
 
     def mkdir(self, context):
 
-        required = main.Scanner.required_values("mkdir")
+        required = Scanner.required_values("mkdir")
         path = ""
         creacion = False
         
@@ -73,7 +73,7 @@ class FILES:
             if current.startswith('"') and current.endswith('"'):
                 current = current[1:-1]
             
-            if main.Scanner.comparar(tk, "path"):
+            if Scanner.comparar(tk, "path"):
 
                 if not current.startswith("/"):
                     current = "/" + current #agregar / al inicio si no lo tiene
@@ -82,19 +82,19 @@ class FILES:
                     required.remove(tk)
                 path = current
                 
-            elif main.Scanner.comparar(tk, "r"):
+            elif Scanner.comparar(tk, "r"):
                 creacion = True
         
         if required:
             for r in required:
-                main.Scanner.error("MKDIR", "El parámetro " + r + " es obligatorio")
+                Scanner.error("MKDIR", "El parámetro " + r + " es obligatorio")
             return
         
 
         try:
             self.crearCarpeta(path, creacion)
         except Exception as e:
-            main.Scanner.error("MKDIR", "No se pudo crear la carpeta: " + path)
+            Scanner.error("MKDIR", "No se pudo crear la carpeta: " + path)
             print(e)
 
     def crearArchivo(self, path, size, cont, creacion): #
@@ -145,7 +145,7 @@ class FILES:
             #path, superbloque, indice del inodo, tipo de inodo [0 = carpeta, 1 = archivo], nombre del inodo, -r
             self.ajustarCreacionInodo(pathDisco, partition, indexInodoPadre, 1, nombreArchivo)
             FILES.addContentArchivo(pathDisco, partition, contenidoArchivo) #<+> Agregar contenido al archivo
-            main.Scanner.mensaje("MKFILE", f"Se ha creado el archivo {nombreArchivo} con éxito")
+            Scanner.mensaje("MKFILE", f"Se ha creado el archivo {nombreArchivo} con éxito")
 
             return
 
@@ -159,14 +159,14 @@ class FILES:
                 indexInodoPadre, encontrado = FILES.verificarExistenciaRuta(pathDisco, partition, indexInodoPadre, directorio, 0)
                 if not encontrado: 
                     if not creacion: #<_> No se encontro el directorio y no se creará
-                        main.Scanner.error("MKFILE", "No se encontró el directorio: " + concatenadorDirectorio)
+                        Scanner.error("MKFILE", "No se encontró el directorio: " + concatenadorDirectorio)
                         return
                     else: #<_> No se encontro el directorio, pero se creará
                         directoriosFaltantes = directorios[directorios.index(directorio):] #obtener los directorios faltantes
 
                         for directorioFaltante in directoriosFaltantes:
                             if not self.ajustarCreacionInodo(pathDisco, partition, indexInodoPadreAnterior, 0, directorioFaltante):
-                                main.Scanner.error("MKFILE", "No se pudo crear la carpeta: " + directorioFaltante, " por falta de espacio")
+                                Scanner.error("MKFILE", "No se pudo crear la carpeta: " + directorioFaltante, " por falta de espacio")
                                 return
 
                             
@@ -174,11 +174,11 @@ class FILES:
             
             #Si se llega a este punto, es porque se encontró la ruta completa o se creó
             if not self.ajustarCreacionInodo(pathDisco, partition, indexInodoPadre, 1, nombreArchivo):
-                main.Scanner.error("MKFILE", "No se pudo crear el archivo: " + nombreArchivo, " por falta de espacio")
+                Scanner.error("MKFILE", "No se pudo crear el archivo: " + nombreArchivo, " por falta de espacio")
                 return
             
             FILES.addContentArchivo(pathDisco, partition, contenidoArchivo) #<+> Agregar contenido al archivo
-            main.Scanner.mensaje("MKFILE", f"Se ha creado el archivo {nombreArchivo} en la ruta {concatenadorDirectorio} con éxito")
+            Scanner.mensaje("MKFILE", f"Se ha creado el archivo {nombreArchivo} en la ruta {concatenadorDirectorio} con éxito")
     
     #<#> Verificar existencia apuntador a bloque desde el index del inodo padre, retorna el index del apuntador y si se encontró
     @staticmethod
@@ -244,7 +244,7 @@ class FILES:
         if len(directorios) == 0: #si solo hay 1 directorio, es una carpeta en la raiz
             #path, superbloque, indice del inodo, tipo de inodo [0 = carpeta, 1 = archivo], nombre del inodo, -r
             self.ajustarCreacionInodo(pathDisco, partition, indexInodoPadre, 0, nombreCarpeta)
-            main.Scanner.mensaje("MKDIR", f"Se ha creado la carpeta {nombreCarpeta} con éxito")
+            Scanner.mensaje("MKDIR", f"Se ha creado la carpeta {nombreCarpeta} con éxito")
             return
 
         else: #si hay directorios, es una carpeta en una ruta especifica
@@ -257,24 +257,24 @@ class FILES:
                 indexInodoPadre, encontrado = FILES.verificarExistenciaRuta(pathDisco, partition, indexInodoPadre, directorio, 0)
                 if not encontrado: 
                     if not creacion: #<_> No se encontro el directorio y no se creará
-                        main.Scanner.error("MKDIR", "No se encontró el directorio: " + concatenadorDirectorio)
+                        Scanner.error("MKDIR", "No se encontró el directorio: " + concatenadorDirectorio)
                         return
                     else: #<_> No se encontro el directorio, pero se creará
                         directoriosFaltantes = directorios[directorios.index(directorio):] #obtener los directorios faltantes
 
                         for directorioFaltante in directoriosFaltantes:
                             if not self.ajustarCreacionInodo(pathDisco, partition, indexInodoPadreAnterior, 0, directorioFaltante):
-                                main.Scanner.error("MKDIR", "No se pudo crear la carpeta: " + directorioFaltante, " por falta de espacio")
+                                Scanner.error("MKDIR", "No se pudo crear la carpeta: " + directorioFaltante, " por falta de espacio")
                                 return
                             indexInodoPadre, _ = FILES.verificarExistenciaRuta(pathDisco, partition, indexInodoPadreAnterior, directorioFaltante, 0)
                         
             
             #Si se llega a este punto, es porque se encontró la ruta completa
             if not self.ajustarCreacionInodo(pathDisco, partition, indexInodoPadre, 0, nombreCarpeta):
-                main.Scanner.error("MKDIR", "No se pudo crear la carpeta: " + nombreCarpeta, " por falta de espacio")
+                Scanner.error("MKDIR", "No se pudo crear la carpeta: " + nombreCarpeta, " por falta de espacio")
                 return
         
-            main.Scanner.mensaje("MKDIR", f"Se ha creado el la carpeta {nombreCarpeta} en la ruta {concatenadorDirectorio} con éxito")
+            Scanner.mensaje("MKDIR", f"Se ha creado el la carpeta {nombreCarpeta} en la ruta {concatenadorDirectorio} con éxito")
 
     #<#> Validar si hay bloques ya creados con espacio libre en el inodo padre, si no hay se agrega bloque y se crea la carpeta
     def ajustarCreacionInodo(self, pathDisco, partition, indexInodoPadre, type, nombre):

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Cliente</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--===============================================================================================-->
+    <link rel="icon" type="image/png" href="images/icons/favicon.ico" />
+    <!--===============================================================================================-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
+        crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="css/base.css">
+    <link rel="stylesheet" type="text/css" href="css/dashboard.css">
+    <!--===============================================================================================-->
+</head>
+
+<body>
+    <header>
+        <!-- Barra de navegacion -->
+        <nav class="navbar bg-dark border-bottom border-body" data-bs-theme="dark">
+            <div class="container-fluid">
+                <!-- Navbar content -->
+                <ul class="nav">
+
+                    <a class="navbar-brand" href="" id="navbar_brand">
+                        <img src="images/icons/sistema.ico" alt="Logo" width="30" height="30" class="d-inline-block">
+                    </a>
+                    <li class="nav-item" id="navbar_item_acercade">
+                        <a class="nav-link" href="" data-bs-target="#modalAcercade" data-bs-toggle="modal">Acerca de</a>
+                    </li>
+
+                </ul>
+                <form class="d-flex">
+                    <button class="btn btn-primary" type="button" id="btn_ver_database">Data base</button>
+                    <button class="btn btn-primary" type="button" id="btn_login">Login</button>
+                </form>
+            </div>
+        </nav>
+    </header>
+    <main class="bg-light">
+
+        <section class="sec0">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Archivo de entrada"
+                    aria-label="Archivo de entrada" id="file_path" readonly>
+                <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalArchivo" id="btn_examinar">Examinar</button>
+                <button class="btn btn-outline-primary" type="button" id="btn_ejecutar">Ejecutar</button>
+            </div>
+        </section>
+
+        <!-- Contenedores -->
+        <section class="contenedor sec1 seccion">
+            <h2>Entrada</h2>
+            <!-- Area de codigo -->
+            <textarea id="entrada"></textarea>
+        </section>
+
+        <!-- Modales -->
+
+        <!-- Modal para subir archivo -->
+        <div class="modal fade" id="modalArchivo" tabindex="-1" aria-labelledby="modalArchivoLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="modalArchivoLabel">Abrir archivo</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="p">Abre un archivo para la ejecución de comandos.</div>
+                        <input type="file" id="file_input">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal acerca de -->
+        <div class="modal fade" id="modalAcercade" aria-hidden="true" aria-labelledby="modalAcercadel" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="modalAcercadel">Acerca de</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body modal-reporte">
+                        <p>Proyecto 2 Manejo e Implementación de Archivos</p>
+                        <p>Nombre: Alan Rodrigo Pamal De León<br>Carnet: 202100303</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" data-bs-target="#modalSelecRep"
+                            data-bs-toggle="modal">Regresar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Consolas -->
+        <section class="contenedor sec2 seccion">
+            <!-- Area de codigo -->
+            <h2>Salida</h2>
+            <textarea readonly id="consola"></textarea>
+
+        </section>
+
+    </main>
+
+    <script src="js/api_conection.js"></script>
+    <script src="js/login.js"></script>
+</body>
+
+</html>
