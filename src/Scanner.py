@@ -28,22 +28,20 @@ def required_values(function):
     return required_value[function]
 
 def error(operacion, mensaje):
-    print('!ERROR {:10s}¡;\t{}'.format(operacion, mensaje))
+    print('!ERROR {:10s}¡ \t{}'.format(operacion, mensaje))
     consola = Console()
-    consola.escribir( '!ERROR {:10s}¡;\t{}'.format(operacion, mensaje) )
+    consola.escribir( '!ERROR {:10s}¡ \t{}'.format(operacion, mensaje) )
 
+def mensaje(operacion, mensaje):
+    print('COMANDO {:9s}\t{}'.format(operacion, mensaje))
+
+    consola = Console()
+    consola.escribir( 'COMANDO {:9s}\t{}'.format(operacion, mensaje) )
 
 def comparar(text1, text2):
     if not text1 or not text2:
         return False
     return text1.upper() == text2.upper()
-
-def mensaje(operacion, mensaje):
-    print('COMANDO {:9s};\t{}'.format(operacion, mensaje))
-
-    consola = Console()
-    consola.escribir( 'COMANDO {:9s};\t{}'.format(operacion, mensaje) )
-
 
 def comando( text):
     tkn = ""
@@ -159,7 +157,7 @@ def funciones( token, tokens, mnt, islgd, lgdo):
             print("Pause ...")
             consola = Console()
             consola.escribir("Pause ...")
-        if comparar( token, "MKDISK"):
+        elif comparar( token, "MKDISK"):
             print("************** FUNCION MKDISK **************")
             disk.Disk.mkdisk(tokens)
             print("\n")
@@ -319,6 +317,18 @@ def excec( path):
             tokens = separar_tokens(texto)
             funciones(tk, tokens)
 
+def existUser(username, password, id_particion, mnt):
+    mountInstance = mnt
+
+    tokens = ['login', 'user=' + username, 'pass=' + password, 'id=' + id_particion]
+
+    exist, logueado = users.Usuarios().login(tokens, mountInstance)
+
+    if exist:
+        print("Usuario ha iniciado sesión para reportes:\n ", logueado)
+    return exist
+    
+
 def inicio():
     while True:
         print(">>>>>>>>>>>>>>>>>>>>>>>>> INGRESE UN COMANDO <<<<<<<<<<<<<<<<<<<<<<<<<")
@@ -328,6 +338,7 @@ def inicio():
         #entrada = input("-> ")
         if entrada.lower() == "exit":
             break
+
         token = comando(entrada)
         entrada = entrada[len(token) + 1:] # se quita el primer comando, ej: exec, deja el path
         tokens = separar_tokens(entrada) # Se separan los tokens

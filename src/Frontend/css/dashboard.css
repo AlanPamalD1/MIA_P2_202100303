@@ -2,10 +2,6 @@ nav {
   color: #dff1ea;
   font-weight: bold;
 }
-body {
-  overflow-y: hidden;
-  background-color: #fbfdfd;
-}
 .contenedor {
   width: 100%;
 }

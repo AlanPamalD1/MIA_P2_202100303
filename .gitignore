@@ -172,6 +172,7 @@ ejecuciones/
 *.pdf
 *.adsj
 *.txt
+prueba.py
 
 #Archivos drawio
 *.drawio

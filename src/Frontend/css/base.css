@@ -15,6 +15,7 @@ html {
   margin: 0 auto;
 }
 body {
+  overflow-y: hidden;
   background-color: #fbfdfd;
   color: #0e2019;
 }

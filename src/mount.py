@@ -12,6 +12,7 @@ class Mount:
             self.discoMontado.append(tmp) 
 
     def __str__(self) -> str:
+
         string = ""
         string += ("\n<---------------------- LISTADO DE MOUNTS ---------------------->\n")
         for i in range(99):
@@ -75,12 +76,13 @@ class Mount:
                             self.discoMontado[i].particiones[j].estado = '1'
                             self.discoMontado[i].particiones[j].nombre = n
                             self.discoMontado[i].particiones[j].num_particion = j+1
+                            self.discoMontado[i].particiones[j].path_disco = p
                            
                             nombreDiscoSegunPath, _ = os.path.splitext(os.path.basename(p))
                             self.discoMontado[i].particiones[j].nombre_disco = nombreDiscoSegunPath
 
                             idDisco = str(j + 1) + nombreDiscoSegunPath
-                            print("MOUNT", "se ha realizado correctamente el mount nuevo -id=03" + idDisco)
+                            Scanner.mensaje("MOUNT", "se ha realizado correctamente el mount nuevo -id=03" + idDisco)
                             return
 
             for i in range(99):
@@ -92,15 +94,16 @@ class Mount:
                             self.discoMontado[i].particiones[j].estado = '1'
                             self.discoMontado[i].particiones[j].nombre = n
                             self.discoMontado[i].particiones[j].num_particion = j+1
+                            self.discoMontado[i].particiones[j].path_disco = p
                             
                             nombreDiscoSegunPath, _ = os.path.splitext(os.path.basename(p))
                             self.discoMontado[i].particiones[j].nombre_disco = nombreDiscoSegunPath
 
                             idDisco = str(j + 1) + nombreDiscoSegunPath
-                            print("MOUNT", "se ha realizado correctamente el mount -id=03" + idDisco)
+                            Scanner.mensaje("MOUNT", "se ha realizado correctamente el mount -id=03" + idDisco)
                             return
         except Exception as e:
-            print("MOUNT", e)
+            Scanner.error("MOUNT", e)
  
     def validarDatosU(self, context):
         required = ["id"]
@@ -142,14 +145,14 @@ class Mount:
                             if idBusqueda == str(self.discoMontado[i].particiones[j].num_particion): #Si el idBusqueda es igual al numero de particion
                                 mp = Structs.ParticionMontada()
                                 self.discoMontado[i].particiones[j] = mp
-                                print("UNMOUNT", "se ha realizado correctamente el unmount -id=" + past)
+                                Scanner.mensaje("UNMOUNT", "se ha realizado correctamente el unmount -id=" + past)
                                 return
 
             raise RuntimeError("No se encontró el id= " + id + ", no se desmontó nada")
         except ValueError:
-            print("UNMOUNT", "identificador de disco incorrecto, debe ser entero")
+            Scanner.error("UNMOUNT", "identificador de disco incorrecto, debe ser entero")
         except Exception as e:
-            print("UNMOUNT", e)
+            Scanner.error("UNMOUNT", e)
   
     def getmount(self, id):
         if not (id.startswith('03')):

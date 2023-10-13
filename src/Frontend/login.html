@@ -20,33 +20,51 @@
 </head>
 <body>
 	
+	<header>
+        <!-- Barra de navegacion -->
+        <nav class="navbar bg-dark border-bottom border-body" data-bs-theme="dark">
+            <div class="container-fluid">
+                <!-- Navbar content -->
+                <ul class="nav">
+
+                    <a class="navbar-brand" href="" id="navbar_brand">
+                        <img src="images/icons/sistema.ico" alt="Logo" width="30" height="30" class="d-inline-block">
+                    </a>
+                </ul>
+                <form class="d-flex">
+                    <button class="btn btn-primary" type="button" id="btn_cargar_archivos">Cargar archivos</button>
+                </form>
+            </div>
+        </nav>
+    </header>
+
 	<div class="limiter">
 		<div class="container-login">
 			<div class="wrap-login">
 				<form class="login-form validate-form">
 					<span class="login-form-title p-b-26">
-						Bienvenido
+						Inicio sesión
 					</span>
 					
 					<div class="wrap-input100 validate-input" data-validate = "Ingresa ID Particion">
-						<input class="input100" type="text" name="id">
+						<input class="input100" type="text" name="id" id="input_id_particion">
 						<span class="focus-input100" data-placeholder="Id particion"></span>
 					</div>
 					
 					<div class="wrap-input100 validate-input" data-validate="Ingresa usuario">
-						<input class="input100" type="text" name="pass">
+						<input class="input100" type="text" name="pass" id="input_username">
 						<span class="focus-input100" data-placeholder="Usuario"></span>
 					</div>
 
 					<div class="wrap-input100 validate-input" data-validate="Ingresa contraseña">
-						<input class="input100" type="password" name="pass">
+						<input class="input100" type="password" name="pass" id="input_password">
 						<span class="focus-input100" data-placeholder="Contraseña"></span>
 					</div>
 					
 					<div class="container-login-form-btn">
 						<div class="wrap-login-form-btn">
 							<div class="login-form-bgbtn"></div>
-							<button class="login-form-btn" type="button">
+							<button class="login-form-btn" type="button" id="btn_ingresar">
 								Ingresar
 							</button>
 						</div>

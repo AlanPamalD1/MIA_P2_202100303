@@ -680,8 +680,9 @@ class Disk:
             carpetaReporte = os.path.dirname(path)
             if not os.path.exists(carpetaReporte): #Si no existe la carpeta, se crea
                 os.makedirs(carpetaReporte, exist_ok=True)
-
-            Disk.graficarReporte(pathDisco, path, name, mbr, particion, ruta)
+            
+            identificador =  '[' + id_part + ']'
+            Disk.graficarReporte(pathDisco, path, name, mbr, particion, ruta, identificador)
             return
         
         except Exception as e:
@@ -689,13 +690,16 @@ class Disk:
             print("ERROR: ",e)
            
     @staticmethod
-    def graficarReporte(pathDisco, path, name, mbr, particion, ruta): #path del disco en el sistema, path del reporte, nombre del reporte, mbr del disco
+    def graficarReporte(pathDisco, path, name, mbr, particion, ruta, identificador): 
+        #path del disco en el sistema, path del reporte, nombre del reporte, mbr del disco, particion, ruta del archivo, identificador
 
         lista_particiones = mbr.getParticiones() #Obtener lista de particiones
 
         #Quitar y guardar en otra variable la extension de path
         extension = os.path.splitext(path)[1][1:] #Obtener la extension del archivo sin el punto
         pathRep = path[:path.rfind(".")] #Quitar la extension del path
+        pathRep += identificador #Agregar identificador reporte
+        pathFinal = pathRep + "." + extension #Agregar la extension al path
 
         #Nombre del disco
         nombreDisco = os.path.basename(pathDisco)
@@ -1019,7 +1023,7 @@ class Disk:
                     textoBitmap = textoBitmap.replace(b'\x01'.decode('utf-8'), "1")
                     
                     #crear archivo de texto
-                    with open(path, 'w') as archivo:
+                    with open(pathFinal, 'w') as archivo:
                         for i in range(0, len(textoBitmap), 20):
                             linea = textoBitmap[i:i+20]  # Extrae una línea de longitud_linea
                             linea = linea.replace("0", "0 ")
@@ -1050,8 +1054,7 @@ class Disk:
                         bfile.seek(sprBloque.s_bm_block_start)
                         textoBitmap = bfile.read(tamanioBitmap)
 
-                    #crear archivo de texto
-                    with open(path, 'w') as archivo:
+                    with open(pathFinal, 'w') as archivo:
                         for i in range(0, len(textoBitmap), 20):
                             linea = textoBitmap[i:i+20]  # Extrae una línea de longitud_linea
                             linea = linea.replace("0", "0 ")
@@ -1374,7 +1377,7 @@ class Disk:
 
                 #crear archivo de texto
                 try:
-                    with open(path, 'w') as archivo:
+                    with open(pathFinal, 'w') as archivo:
                         archivo.write(concatenadorTexto)
                 except Exception as e:
                     Scanner.error("REP", "Error al crear el archivo en la ruta: %s" % path)

@@ -152,19 +152,20 @@ class Transition:
         return struct.pack("<5i", self.partition, self.start, self.end, self.before, self.after)
 
 @add_objprint
+class DiscoMontado:
+    def __init__(self):
+        self.path = ''
+        self.estado = '0'
+        self.particiones = [ParticionMontada() for _ in range(26)]
+
+@add_objprint
 class ParticionMontada:
     def __init__(self):
         self.estado = '0'
         self.nombre = '' #Nombre de la particion
         self.nombre_disco = '' #Nombre del disco al que pertenece la particion
         self.num_particion = -1 #Numero de particion
-
-@add_objprint
-class DiscoMontado:
-    def __init__(self):
-        self.path = ''
-        self.estado = '0'
-        self.particiones = [ParticionMontada() for _ in range(26)]
+        self.path_disco = '' #Path del disco
 
 @add_objprint
 class Inodos:

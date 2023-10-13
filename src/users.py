@@ -21,6 +21,11 @@ class Usuarios:
         self.mount = m
 
     def login(self, context, m):
+
+        print("ejecuntado login con")
+        print(context)
+        print(m)
+
         self.mount = m
         id = ""
         user = ""

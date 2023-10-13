@@ -1,4 +1,3 @@
-import asyncio
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import Scanner
@@ -27,7 +26,7 @@ def index():
         "message": "API REST INICIADA CORRECTAMENTE"
     })
 
-@app.route("/exec", methods=['GET', 'POST'])
+@app.route("/exec", methods=['POST'])
 def exec():
     comandos = request.json['comandos']
     try:
@@ -40,18 +39,27 @@ def exec():
                 datos['mount'], datos['logued'], datos['logueado']  = Scanner.funciones(tk, tks, datos['mount'], datos['logued'], datos['logueado'])
 
         txt_consola = Console().getConsola()
-        #Console().limpiar()
-        
-        print(str(datos['mount']))
+        Console().limpiar()
 
-        db = "Base de datos obtenida correctamente\n"
-        db += " (usuario logueado)\n" if datos['logued'] else " (usuario no logueado)\n"
-        db += " (usuario: " + str(datos['logueado']) + ")\n" if datos['logued'] else ""
-        db += "Los discos montados son:\n" + str(datos['mount'])
-
-        return jsonify({"message": "Ejecución terminada", "consola": txt_consola, "baseDeDatos": db})
+        return jsonify({"message": "Ejecución terminada", "consola": txt_consola})
     except Exception as e:
         return jsonify({"message": e })
+
+@app.route("/login", methods=['POST'])
+def login():
+    try:
+        username = request.json['username']
+        password = request.json['password']
+        id = request.json['idparticion']
+
+        logued = Scanner.existUser(username, password, id, datos['mount'])
+
+        if logued:
+            return jsonify({"message": "Usuario logueado correctamente"})
+        return jsonify({"message": "Usuario no encontrado"})
+    except Exception as e:
+        print(e)
+        return jsonify({"message": "Usuario no encontrado"})
 
 
 @app.route("/getBaseDeDatos", methods=['GET'])
@@ -62,11 +70,9 @@ def getBaseDeDatos():
     db += " (usuario: " + str(datos['logueado']) + ")\n" if datos['logued'] else ""
     db += "Los discos montados son:\n" + str(datos['mount'])
 
-    print(str(datos['mount']))
-
     return jsonify({"message": db})
 
-@app.route("/resetBaseDeDatos", methods=['GET', 'POST'])
+@app.route("/resetBaseDeDatos", methods=['GET'])
 def resetBaseDeDatos():
     datos['mount'] = Mount()
     datos['logueado'] = UsuarioActivo()
