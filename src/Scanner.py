@@ -333,9 +333,7 @@ def inicio():
     while True:
         print(">>>>>>>>>>>>>>>>>>>>>>>>> INGRESE UN COMANDO <<<<<<<<<<<<<<<<<<<<<<<<<")
         print("->Si deseas salir escribe \"exit\"<-")
-        entrada = "execute -path=src/ejecucion-windows.adsj"
-        #entrada = "execute -path=SystemExt/ejecucion-linux.adsj"
-        #entrada = input("-> ")
+        entrada = input("-> ")
         if entrada.lower() == "exit":
             break
 

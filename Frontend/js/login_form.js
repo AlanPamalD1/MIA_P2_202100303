@@ -1,6 +1,7 @@
-// focus inputs
-(function () {
-    //[ Focus input ]
+//Cuando cargue la pagina
+document.addEventListener("DOMContentLoaded", function () {
+
+    // Agregar clase has-val a los inputs que tengan valor
     inputs100 = document.getElementsByClassName('input100');
     for (let i = 0; i < inputs100.length; i++) {        
         inputs100[i].addEventListener('blur', function(){
@@ -12,7 +13,7 @@
             }
         });
     }
-})();
+});
 
 
 async function endpoint_login(user, pwd, id) {
@@ -58,10 +59,23 @@ btnIngresar.addEventListener("click", async () => {
         const res = await endpoint_login(usuario, password, idparticion)
 
         if (res != undefined) {
+            
             alert(res.message)
-        }else{
-            alert("Error al ingresar")
-        }
+
+            if (res.encontrado){
+                
+                //guardar id particion en localstorage
+                localStorage.setItem("idparticion", idparticion)
+
+                //redirigir a reportes
+                window.location.href = "reportes.html"
+                return
+            }
+            return
+        } 
+
+        alert("Error al ingresar")
+        
 
     } catch (error) {
         console.error(error)

@@ -19,7 +19,7 @@ class Mount:
             for j in range(26):
                 disco = self.discoMontado[i].particiones[j]
                 if disco.estado == '1':
-                    string += (str(j)+")\t  30"+str(j + 1) + disco.nombre_disco)+"\n"
+                    string += (str(j)+")\t  03"+str(j + 1) + disco.nombre_disco)+"\n"
         string += ("\n<--------------------------------------------------------------->")
 
         return string
@@ -220,5 +220,5 @@ class Mount:
             for j in range(26):
                 disco = self.discoMontado[i].particiones[j]
                 if disco.estado == '1':
-                    print(str(j)+")\t  30"+str(j + 1) + disco.nombre_disco)
+                    print(str(j)+")\t  03"+str(j + 1) + disco.nombre_disco)
         print("<--------------------------------------------------------------->")

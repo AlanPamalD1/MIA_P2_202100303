@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Reportes</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--===============================================================================================-->
+
+
+    <!--===============================================================================================-->
+
+    <link rel="icon" type="image/png" href="images/icons/favicon.ico" />
+    <!--===============================================================================================-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
+        crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/e63c20851b.js" crossorigin="anonymous"></script>
+    <!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="css/base.css">
+    <link rel="stylesheet" type="text/css" href="css/reportes.css">
+    <!--===============================================================================================-->
+</head>
+
+<body>
+    <header>
+        <!-- Barra de navegacion -->
+        <nav class="navbar bg-dark border-bottom border-body" data-bs-theme="dark">
+            <div class="container-fluid">
+                <!-- Navbar content -->
+                <ul class="nav">
+
+                    <a class="navbar-brand" href="" id="navbar_brand">
+                        <img src="images/icons/sistema.ico" alt="Logo" width="30" height="30" class="d-inline-block">
+                    </a>
+                </ul>
+                <form class="d-flex">
+                    <button class="btn btn-primary" type="button" data-bs-target="#modalAcercade" data-bs-toggle="modal">Acerca de</button>
+                    <button class="btn btn-primary" type="button" id="btn_logout">Logout</button>
+                </form>
+            </div>
+        </nav>
+    </header>
+    <main >
+        <!-- Contenido -->
+
+        <div class="container">
+            <h1>Tabla de reportes</h1>
+            <div class="tabla_container">
+                <table id="tablaReportes" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Ruta</th>
+                            <th>Tamaño</th>
+                            <th>Ver</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Filas se agregarán aquí -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modales -->
+
+        <!-- Modal acerca de -->
+        <div class="modal fade" id="modalAcercade">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="modalAcercadel">Acerca de</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body modal-reporte">
+                        <p>Proyecto 2 Manejo e Implementación de Archivos</p>
+                        <p>Nombre: Alan Rodrigo Pamal De León<br>Carnet: 202100303</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" data-bs-target="#modalSelecRep"
+                            data-bs-toggle="modal">Regresar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="overlay"></div>
+        <div id="popup">
+
+    </main>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+    <script src="js/api_reportes.js"></script>
+</body>
+
+</html>

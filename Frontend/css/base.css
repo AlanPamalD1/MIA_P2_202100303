@@ -1,6 +1,14 @@
+nav {
+  color: #dff1ea;
+  font-weight: bold;
+}
+nav button {
+  margin: 0.25rem;
+}
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 5.875rem;
+  background-color: #fbfdfd;
 }
 * {
   margin: 0;
@@ -15,7 +23,8 @@ html {
   margin: 0 auto;
 }
 body {
-  overflow-y: hidden;
+  min-height: 100vh;
+  max-height: 100vh;
   background-color: #fbfdfd;
   color: #0e2019;
 }

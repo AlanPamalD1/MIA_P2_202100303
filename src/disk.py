@@ -691,10 +691,16 @@ class Disk:
            
     @staticmethod
     def graficarReporte(pathDisco, path, name, mbr, particion, ruta, identificador): 
-        #path del disco en el sistema, path del reporte, nombre del reporte, mbr del disco, particion, ruta del archivo, identificador
+        #path del disco en el sistema, path del reporte, nombre del reporte, mbr del disco, particion, ruta del archivo en el disco binario, identificador
 
         lista_particiones = mbr.getParticiones() #Obtener lista de particiones
-
+        
+        #todos los reportes se generaran en la carpeta home
+        if path.startswith("/"):
+            path = '/reportes' + path
+        else:
+            path = '/reportes/' + path
+        
         #Quitar y guardar en otra variable la extension de path
         extension = os.path.splitext(path)[1][1:] #Obtener la extension del archivo sin el punto
         pathRep = path[:path.rfind(".")] #Quitar la extension del path

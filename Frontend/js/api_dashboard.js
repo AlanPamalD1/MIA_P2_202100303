@@ -1,3 +1,4 @@
+
 txtAreaEntrada = document.getElementById("entrada");
 txtAreaConsola = document.getElementById("consola");
 

@@ -104,10 +104,10 @@ class FILES:
         idUsuario = self.logueado.id
         pathDisco, partition = self.mount.getmount(idUsuario)
 
-        directorios = path.split('/') #separar la ruta en directorios
+        directorios = path.split(os.sep) #separar la ruta en directorios
         directorios = list(filter(None, directorios)) #eliminar los elementos vacios
 
-        nombreArchivo = directorios[-1] #obtener el nombre de la carpeta
+        nombreArchivo = directorios[-1] #obtener el nombre del archivo
         directorios = directorios[:-1] #obtener los directorios de la ruta
 
         indexInodoPadre = 0
@@ -232,7 +232,7 @@ class FILES:
         idUsuario = self.logueado.id
         pathDisco, partition = self.mount.getmount(idUsuario)
 
-        directorios = path.split('/') #separar la ruta en directorios
+        directorios = path.split(os.sep) #separar la ruta en directorios
         directorios = list(filter(None, directorios)) #eliminar los elementos vacios
 
         nombreCarpeta = directorios[-1] #obtener el nombre de la carpeta

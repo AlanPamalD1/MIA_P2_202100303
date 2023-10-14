@@ -8,9 +8,19 @@
 @color-background-dark: #020303;
 @color-secondary-dark: #18253a;
 
+
+nav{
+    color: @color-text-dark;
+    font-weight: bold;
+    button{
+        margin: 0.25rem;
+    }
+}
+
 html{
 	scroll-behavior: smooth;
 	scroll-padding-top: 5.875rem;
+	background-color: @color-background;
 }
 * {
 	margin: 0;
@@ -27,7 +37,8 @@ html{
 }
 
 body {
-	overflow-y: hidden;
+	min-height: 100vh;
+	max-height: 100vh;
 	background-color: @color-background;
 	color: @color-text
 }

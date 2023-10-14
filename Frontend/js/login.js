@@ -1,9 +1,4 @@
 // Espera a que el DOM esté listo
-document.addEventListener("DOMContentLoaded", function () {
-    // Aquí puedes escribir la lógica para guardar los datos del formulario
-    
-
-});
 
 function guardarDatos(){
     const idparticion = document.getElementById('idparticion').value;
